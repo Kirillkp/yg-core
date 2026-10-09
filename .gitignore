@@ -1,0 +1,39 @@
+# Сгенерированные папки Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+MemoryCaptures/
+Recordings/
+
+# Решения и кэши IDE
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+
+# Сборки и пакеты
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Служебные файлы Unity
+sysinfo.txt
+crashlytics-build.properties
+
+# macOS
+.DS_Store
+
+# Папка Documentation~ это соглашение Unity для документации пакета.
+# Глобальный игнор с шаблоном *~ (резервные копии редакторов) исключил бы её,
+# поэтому явно возвращаем её в репозиторий.
+!Documentation~/

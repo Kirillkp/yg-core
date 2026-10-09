@@ -1,0 +1,16 @@
+{
+  "name": "com.kirillpolosov.yg-core",
+  "version": "0.0.0",
+  "displayName": "YG Core",
+  "description": "Общая механика для игр на Яндекс Играх: состояния и пауза, экономика, сохранения с миграциями, контракты платформы, реализация на PluginYG2, аудио, локализация, настройки Web-качества.",
+  "unity": "6000.0",
+  "unityRelease": "0f1",
+  "keywords": [
+    "yandex",
+    "webgl",
+    "pluginyg2"
+  ],
+  "author": {
+    "name": "Kirill Polosov"
+  }
+}
