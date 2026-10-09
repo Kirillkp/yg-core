@@ -10,8 +10,8 @@
 
 | Модуль пакета | Источник в «Обби» | Размер | Статус | Замечания |
 |---|---|---|---|---|
-| Core | `Scripts/Core/` (16 файлов: `AppState`, `PauseCoordinator`, `PauseReason`, `GameplayStateService`, `RealtimeDelay`, `SessionEconomyService`, `SessionGameSettingsService`, события) | около 625 строк | не начат | Почти как есть, переименовать пространство имён |
-| Контракты | `Scripts/PlatformServices/Contracts/` (22 файла) | около 445 строк | не начат | Без изменений в сути |
+| Core | `Scripts/Core/` (16 файлов: `AppState`, `PauseCoordinator`, `PauseReason`, `GameplayStateService`, `RealtimeDelay`, `SessionEconomyService`, `SessionGameSettingsService`, события) | около 625 строк | перенесён | Пространство имён `YgCore.Core`. Поведение сохранено, проверено `Tools/CoreChecks`. Отличия: `modules/core.md` |
+| Контракты | `Scripts/PlatformServices/Contracts/` (22 файла) | около 445 строк | перенесён | Отдельная сборка `YgCore.Contracts` без зависимости от Core. Комментарии о значении статусов сверены с реализацией на PluginYG2 |
 | Фабрики и заглушки | `Scripts/PlatformServices/*Factory.cs`, `Unavailable*` | около 400 строк | не начат | |
 | Моки | `Scripts/PlatformServices/EditorMocks/` (12 файлов) | около 490 строк | не начат | |
 | Яндекс-реализация | `Scripts/PlatformServices/PluginYG2/` (9 файлов: реклама, авторизация, покупки 548, сохранение 363, лидерборд, язык, готовность, жизненный цикл, рефлексия) | около 2100 строк | не начат | Самая ценная часть |

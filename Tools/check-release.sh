@@ -62,7 +62,26 @@ if ! grep -qF "$version" "$pkg/Documentation~/compatibility.md"; then
   warn "версия $version не упомянута в compatibility.md: обновите таблицу совместимости"
 fi
 
-# 5. Рабочее дерево чистое и такого тега ещё нет
+# 5. У всех файлов пакета есть .meta (иначе Unity проигнорирует пакет из git)
+if python3 "$root/Tools/generate-meta.py" --check >/dev/null 2>&1; then
+  ok "у всех файлов пакета есть .meta"
+else
+  fail "не хватает .meta-файлов: выполните python3 Tools/generate-meta.py и закоммитьте результат"
+fi
+
+# 6. Логика Core проходит проверки без Unity
+if command -v dotnet >/dev/null 2>&1; then
+  if dotnet run --project "$root/Tools/CoreChecks" -v q >/dev/null 2>&1; then
+    ok "проверки логики Core пройдены (Tools/CoreChecks)"
+  else
+    fail "проверки Tools/CoreChecks не проходят: запустите dotnet run --project Tools/CoreChecks"
+  fi
+  rm -rf "$root/Tools/CoreChecks/bin" "$root/Tools/CoreChecks/obj"
+else
+  warn "dotnet не найден: проверки Tools/CoreChecks пропущены"
+fi
+
+# 7. Рабочее дерево чистое и такого тега ещё нет
 if git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
   if [[ -n "$(git -C "$root" status --porcelain)" ]]; then
     fail "в рабочем дереве есть незакоммиченные изменения"
