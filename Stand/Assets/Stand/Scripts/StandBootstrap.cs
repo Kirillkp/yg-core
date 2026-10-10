@@ -248,6 +248,28 @@ namespace YgCoreStand
             scroll.style.minHeight = 160;
             scroll.contentContainer.style.flexShrink = 0;
             scroll.contentContainer.style.flexGrow = 0;
+
+            // Без темы список не обрезает содержимое по своей рамке: включаем обрезку сами.
+            scroll.style.overflow = Overflow.Hidden;
+            scroll.contentViewport.style.overflow = Overflow.Hidden;
+            scroll.contentViewport.style.flexGrow = 1;
+            scroll.contentViewport.style.flexShrink = 1;
+
+            // Полоса прокрутки без темы нулевой ширины: задаём ширину и цвета, кнопки со стрелками прячем.
+            var bar = scroll.verticalScroller;
+            bar.style.width = 14;
+            bar.style.flexShrink = 0;
+            bar.lowButton.style.display = DisplayStyle.None;
+            bar.highButton.style.display = DisplayStyle.None;
+            bar.slider.style.flexGrow = 1;
+            bar.slider.style.backgroundColor = Background;
+            var thumb = bar.slider.Q(className: "unity-base-slider__dragger");
+            if (thumb != null)
+            {
+                thumb.style.backgroundColor = Border;
+                Round(thumb, 6);
+            }
+
             return scroll;
         }
 
