@@ -93,7 +93,12 @@ if command -v dotnet >/dev/null 2>&1; then
   else
     fail "ветка WebGL не компилируется: dotnet build Tools/YandexChecks -p:WebGLCompile=true"
   fi
-  rm -rf "$root/Tools/YandexChecks/bin" "$root/Tools/YandexChecks/obj"
+  if dotnet build "$root/Tools/CoreChecks" -p:WebGLCompile=true -v q >/dev/null 2>&1; then
+    ok "ветка WebGL веб-качества компилируется (Tools/CoreChecks)"
+  else
+    fail "ветка WebGL веб-качества не компилируется: dotnet build Tools/CoreChecks -p:WebGLCompile=true"
+  fi
+  rm -rf "$root/Tools/YandexChecks/bin" "$root/Tools/YandexChecks/obj" "$root/Tools/CoreChecks/bin" "$root/Tools/CoreChecks/obj"
 else
   warn "dotnet не найден: проверки Tools/YandexChecks пропущены"
 fi

@@ -19,8 +19,14 @@ namespace UnityEngine
         public static string ToJson(object value) => JsonSerializer.Serialize(value, value.GetType(), Options);
     }
 
+    public static class Awaitable
+    {
+        public static System.Threading.Tasks.Task NextFrameAsync(System.Threading.CancellationToken token) => System.Threading.Tasks.Task.Delay(1, token);
+    }
+
     public static class Time
     {
+        public static double realtimeSinceStartupAsDouble => Environment.TickCount64 / 1000.0;
         // Время, которым управляют проверки.
         public static float unscaledTime;
     }
@@ -28,6 +34,7 @@ namespace UnityEngine
     public static class Debug
     {
         public static void LogWarning(object message) => Console.WriteLine("  [Debug.LogWarning] " + message);
+        public static void Log(object message) { }
     }
 
     public static class Mathf

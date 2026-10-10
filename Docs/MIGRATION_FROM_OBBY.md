@@ -20,8 +20,8 @@
 | Сохранения и прогресс | `Scripts/Gameplay/Progression/` (`GameProgressionService` 611, `ProgressionPayloadCodec` 341, `GameProgressData`) | около 1000 строк | перенесён общий движок | `ProgressionService<TData>`, `ProgressionCodec<TData>`, состояния, защита от потери. Поля `GameProgressData`, правила слияния, миграция v0 и ID брейнротов, `Capture`/`Apply`, `RegisterRunResult`, туториал остаются в игре |
 | Магазин (логика) | `SessionStoreService`, `StoreCatalog`, `StoreItemDefinition`, `StoreRarity`, `StoreAcquisitionKind` | около 700 строк логики | перенесён | Каталог, категории, цены, предметы по умолчанию остаются в игре; категории стали `int`. Экраны (карточки, окно магазина, превью, информер) не переносятся |
 | Аудио | `AudioDirector`, `AudioSettingsApplier`, `SfxId` | около 600 строк | перенесён общий механизм | Базовый `AudioDirector` в пакете. Игровые подписки (бегун, монеты, брейнроты, жизни, вода, магазин, экономика) и enum `SfxId` остаются в игре |
-| Локализация | `LocalizationCatalog` (483), `LocalizationService*`, `LocalizedTextView` | около 500 строк | механизм перенесён, тексты нет | `DictionaryLocalizationCatalog` в пакете. Тексты `LocalizationCatalog` остаются в игре. Определение языка платформы придёт с Яндекс-модулем. DEC-011 открыт |
-| Web-качество | `WebQualityBootstrap`, `WebQualitySettings` | около 60 строк | не начат | |
+| Локализация | `LocalizationCatalog` (483), `LocalizationService*`, `LocalizedTextView` | около 500 строк | перенесён | `DictionaryLocalizationCatalog` и `LocalizedTextView` (необязательная сборка `YgCore.Localization.UI`) в пакете. Тексты `LocalizationCatalog` остаются в игре |
+| Web-качество | `WebQualityBootstrap`, `WebQualitySettings` | около 60 строк | перенесён | Правила выбора вынесены в `WebQualityPolicy` и проверены. JavaScript `ObbyWebIsMobile` → `YgCoreWebIsMobile` |
 
 ## Не переносится в пакет
 
@@ -30,15 +30,17 @@
 - Контент: арт, музыка, тексты, каталог товаров.
 - `PluginYourGames/` (сам PluginYG2): внешняя зависимость, DEC-008.
 
-## Порядок работ
+## Порядок работ и статус
 
-1. Core и Контракты.
-2. Фабрики, заглушки, моки.
-3. Яндекс-реализация вместе с заплатками (самый тяжёлый шаг).
-4. Сохранения и прогресс.
-5. Магазин, аудио, локализация, Web-качество.
-6. Стенд: секции создаются вместе с модулями, сборка и прогон на Яндексе.
-7. Переключение «Обби Потоп» на пакет и проверка.
+1. Core и Контракты: **сделано**.
+2. Фабрики, заглушки, моки: **сделано**.
+3. Яндекс-реализация вместе с заплатками: **сделано** (проверена вне Unity).
+4. Сохранения и прогресс: **сделано**.
+5. Магазин, аудио, локализация, Web-качество: **сделано**.
+6. **Стенд: не сделано.** Нужен запущенный Unity Editor: создать проект `Stand/`, секции по `Docs/STAND_CHECKLIST.md`, WebGL-сборка, прогон на Яндексе. Это условие выпуска `v0.1.0`.
+7. Первая реальная компиляция пакета в Unity и проверка допущений, помеченных «не проверено в Unity» (особенно DEC-015: мосты без `.asmdef` попадают в `Assembly-CSharp`; необязательные сборки `Audio.UI` и `Localization.UI`).
+8. Переключение «Обби Потоп» на пакет (раздел ниже) и проверка.
+9. Выпуск `v0.1.0`: запись версии, `Tools/check-release.sh`, тег.
 
 После каждого шага: обновлены модульный документ, CHANGELOG, `00-index.md` (статус модуля).
 
@@ -52,6 +54,8 @@
 | Каталог строк | Статический `LocalizationCatalog` игры оборачивается в `DictionaryLocalizationCatalog` (тексты остаются в игре) и передаётся в `LocalizationServiceFactory` и `EditorMockLocalizationService` |
 | Мок покупок | `EditorMockPurchasesService` в игре создаётся с каталогом «Обби» (скины и наборы монет), так как общий каталог пакета другой |
 | **Сохранения игроков** | Передать в `SaveServiceFactory.Create(storageFieldName: "obbyPotopStorage")` и оставить в игре `partial SavesYG` с полем `obbyPotopStorage` (сейчас это `SavesYGObbyPotop.cs`). Иначе облачные сохранения живых игроков не найдутся |
+| **Веб-качество** | Файл `Resources/WebQualitySettings.asset` пересоздаётся из меню `YgCore / Web Quality Settings` (скрипт другой, старый файл потеряет ссылку): значения `Web Desktop`, `Web Mobile`, `-1` те же. В WebGL-шаблоне `window.ObbyWebQuality` → `window.YgWebQuality` в `index.html` и `quality.js` (если нужно, свойство `isMobile` остаётся). Из `Scripts/PlatformServices` удаляются `WebQualityBootstrap`, `WebQualitySettings`, а `Assets/PlatformServices/Web/ObbyWebQuality.jslib` |
+| **Надписи** | `LocalizedTextView` берётся из пакета. Ссылки на старый скрипт в префабах экранов (меню, магазин, настройки, пауза, коллекция, HUD, брейнрот-вью) нужно перепривязать: у компонента другой скрипт, поэтому при простой замене файлов поля `entries` потеряются. Перепривязку лучше делать скриптом, который заменяет GUID старого скрипта на GUID нового во всех `.prefab` и `.unity` (см. «Переключение Обби») |
 | **Аудио** | Из `AudioDirector` «Обби» делается наследник пакетного `AudioDirector`: в `OnInitialized` остаются подписки на бегуна, монеты, брейнроты, давление, воду и экономику; `OnAppStateEntered(Run)` сбрасывает счётчики жизней и монет; `KeepLoopOnResult` оставляет пузыри при финальном затоплении; `GetMusicPitch` ускоряет музыку при опасности. Звуки магазина: подписка на `store.StatusChanged` и сравнение `StoreStatus`. `SfxId` остаётся в игре, в префабе директора идентификаторы заново назначаются (скрипт другой, потеряются ссылки на поля: **префаб директора нужно пересобрать в Unity**). **Поведение звука при паузах меняется намеренно:** теперь реклама останавливает весь звук (включая «опасность»), а отсчёт музыку не держит, то есть «Обби» звучит иначе, чем раньше; это исправление. Опасность и пузыри заводятся записями `Loops` (громкости 0,55 с гашением на паузе игрока и 0,7). Правила имён кнопок (`Play`, `Close`, `Shop`…) переезжают в `UiPressSounds.Resolver`. `AudioSettingsApplier` берётся из пакета |
 | **Магазин** | `StoreCatalog.CreateDefault()` переписывается на `StoreItemDefinition.Equippable(...)` / `CurrencyPack(...)` с `(int)StoreItemCategory.X` (категория `Currency` → `CurrencyPack`). `DefaultCharacterId` и `IsOptionalAccessory` уходят в `StoreOptions` (`DefaultItems = { [Character] = "character_default" }`, `OptionalCategories = { Head, Face, Torso, Pants }`). `StoreRarity` и `StoreAcquisitionKind` берутся из пакета (имена и значения те же). Enum `StoreItemCategory` остаётся в игре с теми же числами. `CharacterEquipmentRules` реализует `IStoreEquipmentRules` (или заменяется на `StoreSlotBlockingRules`). `SessionStoreService.StatusChanged` теперь даёт `StoreStatus`: экраны и `AudioDirector` переходят на `StoreStatusKeys.ToKey(status)` или сравнивают статусы. `GetEquippedItems()` и `RestoreProgress(...)` работают с `int` категориями. В `GameProgressionService` обработчик критического сохранения магазина получает `SaveCriticalAsync`. `EquippedItemProgressData` берётся из пакета (поля те же) |
 | **Прогресс** | `GameProgressData` делается наследником `ProgressionData` (поля те же, формат JSON не меняется). Из `ProgressionPayloadCodec` в игровую схему `IProgressionSchema<GameProgressData>` уходят `Normalize` (включая миграцию ID брейнротов), `Merge`, `Migrate` (v0 → v1) и тестовые полезные нагрузки. `FormatId = "obby-potop-progress"`, ключ `player_progress`, предел 190 КБ, задержки 1,5 с и 10 с остаются прежними. Из `GameProgressionService` остаётся тонкая игровая обёртка: `BestDistance`, `RegisterDistance`, `RegisterRunResult` (внутри `SuppressChangeTracking()`), `CompleteTutorial`, `Capture`/`Apply` в классе-связке. Обработчик критического сохранения магазина получает `SaveCriticalAsync`. `GameSettingsProgressData` можно заменить на `SettingsProgressData` |

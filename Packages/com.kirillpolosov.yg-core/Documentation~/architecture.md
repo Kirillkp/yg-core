@@ -14,7 +14,7 @@
 Стенд ──────────────→ Factories, Save, Store, Audio, Localization, Core, WebQuality
 
 Save, Store → Core, Contracts   (Save: прогресс игры подключается через схему и связь, которые пишет игра)
-Localization ───────→ (ни от чего не зависит)
+Localization ───────→ (ни от чего не зависит)   (Localization.UI необязательная: только если в проекте есть uGUI)
 Audio ──────────────→ Core   (Audio.UI необязательная: только если в проекте есть uGUI и Input System)
 Factories ──────────→ Contracts, Localization, Mocks, Yandex
 Mocks ──────────────→ Contracts, Localization
@@ -35,7 +35,8 @@ Core, Contracts ────→ (ни от чего не зависят)
 | `YgCore.Audio` | музыка и звуки | Core |
 | `YgCore.Audio.UI` (необязательная) | звук нажатия на uGUI | Audio, uGUI, Input System |
 | `YgCore.Localization` | каталог строк игры и нормализация языка | ничего |
-| `YgCore.WebQuality` | настройки качества для браузера | ничего |
+| `YgCore.WebQuality` | выбор качества графики для браузера | ничего |
+| `YgCore.Localization.UI` (необязательная) | подстановка строк в uGUI `Text` | Contracts, uGUI |
 | `YgCore.Mocks` | фальшивая платформа | Contracts, Localization |
 | `YgCore.Yandex` | сервисы на PluginYG2 (рефлексия) | Core, Contracts, Localization |
 | Папка `YandexBridge` (**без** `.asmdef`, `Assembly-CSharp`) | мосты к PluginYG2 и `.jslib` | PluginYG2 напрямую |

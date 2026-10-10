@@ -147,6 +147,9 @@ static class P
         // Модуль Audio: правила звука и директор на заглушках Unity.
         AudioChecks.Run(Check);
 
+        // Веб-качество и подстановка строк в надписи.
+        WebAndTextChecks.Run(Check);
+
         Console.WriteLine(fails == 0 ? "\nВсе проверки пройдены." : $"\nПровалено: {fails}");
         return fails == 0 ? 0 : 1;
     }

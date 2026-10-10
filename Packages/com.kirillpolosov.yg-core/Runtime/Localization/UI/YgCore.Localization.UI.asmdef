@@ -1,0 +1,25 @@
+{
+    "name": "YgCore.Localization.UI",
+    "rootNamespace": "YgCore.Localization.UI",
+    "references": [
+        "YgCore.Contracts",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "YGCORE_UGUI"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "",
+            "define": "YGCORE_UGUI"
+        }
+    ],
+    "noEngineReferences": false
+}

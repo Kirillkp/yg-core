@@ -24,7 +24,41 @@ namespace UnityEngine
     {
         public GameObject gameObject;
         public Transform transform => gameObject.transform;
+
+        public List<T> GetComponentsInChildren<T>(bool includeInactive) where T : Component => gameObject.GetComponentsInChildren<T>();
     }
+
+    // Файл-настройка Unity и всё, что нужно модулю WebQuality.
+    public class ScriptableObject : Object { }
+
+    [AttributeUsage(AttributeTargets.Class)]
+    public sealed class CreateAssetMenuAttribute : Attribute
+    {
+        public string menuName, fileName;
+    }
+
+    public enum RuntimeInitializeLoadType { BeforeSceneLoad }
+
+    [AttributeUsage(AttributeTargets.Method)]
+    public sealed class RuntimeInitializeOnLoadMethodAttribute : Attribute
+    {
+        public RuntimeInitializeOnLoadMethodAttribute(RuntimeInitializeLoadType loadType) { }
+    }
+
+    public static class Resources
+    {
+        public static readonly Dictionary<string, Object> Assets = new Dictionary<string, Object>();
+        public static T Load<T>(string path) where T : Object => Assets.TryGetValue(path, out var asset) ? asset as T : null;
+    }
+
+    public static class QualitySettings
+    {
+        public static string[] names = new[] { "Web Desktop", "Web Mobile" };
+        public static int level;
+        public static void SetQualityLevel(int index, bool applyExpensiveChanges) { level = index; }
+    }
+
+    public static class Application { public static int targetFrameRate; }
 
     public class Transform : Component
     {
@@ -139,6 +173,12 @@ namespace UnityEngine.UI
     {
         public bool interactable = true;
         public virtual bool IsInteractable() => interactable;
+    }
+
+    public class Text : Component
+    {
+        public bool enabled;
+        public string text;
     }
 
     public class Toggle : Selectable { }
