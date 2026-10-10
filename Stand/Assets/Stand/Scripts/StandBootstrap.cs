@@ -28,6 +28,8 @@ namespace YgCoreStand
         private static readonly Color OkTint = Hex("#1D2B24");
         private static readonly Color FailTint = Hex("#32201F");
 
+        private const int MaxUiLines = 200;
+
         private static StandApp app;
         private static ScrollView logView;
         private static Label counters;
@@ -120,6 +122,7 @@ namespace YgCoreStand
             title.style.marginBottom = 10;
             title.style.flexShrink = 0;
             root.Add(title);
+            AddSoundStatus(root);
 
             // Кнопки и журнал делят экран поровну и не вытесняют друг друга.
             var buttons = NewScroll();
@@ -144,10 +147,9 @@ namespace YgCoreStand
                 ("Топ-5", () => app.GetTopAsync()));
             AddScoreInput(boardCard);
 
-            var audioCard = Section(buttons, "Звук",
+            Section(buttons, "Звук",
                 ("Звук вкл/выкл", () => { app.ToggleSound(); return Task.CompletedTask; }),
                 ("Клик", () => { app.PlayClick(); return Task.CompletedTask; }));
-            AddSoundStatus(audioCard);
 
             Section(buttons, "Покупки",
                 ("Каталог", () => app.ShowCatalogAsync()),
@@ -314,9 +316,14 @@ namespace YgCoreStand
             if (isSub) text.style.color = TextMuted;
             row.Add(text);
 
-            logView.Add(row);
+            // Новые записи сверху: прокрутка колесом в WebGL не работает, а так свежий результат всегда на виду.
+            logView.Insert(0, row);
+            while (logView.contentContainer.childCount > MaxUiLines)
+            {
+                logView.contentContainer.RemoveAt(logView.contentContainer.childCount - 1);
+            }
+
             RefreshCounters();
-            logView.schedule.Execute(() => logView.scrollOffset = new Vector2(0, float.MaxValue));
         }
 
         private static Task ConsumeLast()
@@ -456,7 +463,9 @@ namespace YgCoreStand
             status.style.marginTop = 8;
             status.style.flexShrink = 0;
             card.Add(status);
-            status.schedule.Execute(() => status.text = app.DescribeSound()).Every(250);
+            status.style.marginTop = 0;
+            status.style.marginBottom = 8;
+            status.schedule.Execute(() => { if (app != null) status.text = app.DescribeSound(); }).Every(250);
         }
 
         private static Button MakeButton(string label, Func<Task> action, bool small)
