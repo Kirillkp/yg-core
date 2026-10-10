@@ -30,7 +30,7 @@ namespace YgCore.Save
         private readonly IProgressionBinding<TData> binding;
         private readonly ProgressionCodec<TData> codec;
         private readonly ProgressionOptions options;
-        private readonly SemaphoreSlim saveLock = new SemaphoreSlim(1, 1);
+        private readonly AsyncGate saveLock = new AsyncGate();
 
         private CancellationTokenSource batchSaveCancellation;
         private long revision;

@@ -47,7 +47,7 @@ namespace YgCore.Yandex
         private readonly Action<string> purchasesLoadFailedHandler;
         private readonly Action<string> consumeSucceededHandler;
         private readonly Action<string> consumeFailedHandler;
-        private readonly SemaphoreSlim operationLock = new SemaphoreSlim(1, 1);
+        private readonly AsyncGate operationLock = new AsyncGate();
 
         private TaskCompletionSource<bool> pendingReadiness;
         private TaskCompletionSource<PlatformServiceResult<PurchaseReceipt>> pendingPurchase;

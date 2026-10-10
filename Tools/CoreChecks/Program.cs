@@ -29,6 +29,21 @@ static class P
         threw = false; try { pc.RequestPause(PauseReason.None); } catch (ArgumentException) { threw = true; }
         Check("None отклоняется", threw);
 
+        // Асинхронный замок: очередь без потоков (в WebGL пула потоков нет, SemaphoreSlim там может зависнуть).
+        var gate = new AsyncGate();
+        var first = gate.WaitAsync();
+        Check("замок: свободный занимается сразу", first.IsCompleted && gate.IsHeld);
+        var second = gate.WaitAsync(); var third = gate.WaitAsync();
+        Check("замок: занятый ставит в очередь", !second.IsCompleted && !third.IsCompleted && gate.WaitingCount == 2);
+        gate.Release();
+        Check("замок: освобождение сразу передаёт следующему (без потока)", second.IsCompleted && !third.IsCompleted && gate.IsHeld);
+        gate.Release();
+        Check("замок: очередь соблюдается по порядку", third.IsCompleted && gate.WaitingCount == 0);
+        gate.Release();
+        Check("замок: после последнего освобождения свободен", !gate.IsHeld);
+        gate.Release();
+        Check("замок: лишнее освобождение безопасно", !gate.IsHeld && gate.WaitAsync().IsCompleted);
+
         // Экономика: транзакции идемпотентны.
         var eco = new SessionEconomyService();
         Check("начисление", eco.TryCredit("t1", 100, "test") && eco.Balance == 100);

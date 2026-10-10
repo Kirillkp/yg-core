@@ -234,14 +234,31 @@ namespace YgCoreStand
             StandLog.Check(after.IsSuccess && string.IsNullOrEmpty(after.Value), $"Сохранение: после удаления пусто ({after.Status})");
         }
 
-        /// <summary>Две быстрые записи подряд: должна остаться вторая.</summary>
+        /// <summary>
+        /// Две быстрые записи подряд: должна остаться вторая. Журнал пошаговый, чтобы при зависании было видно,
+        /// на какой записи оно произошло, а защита по времени не даёт проверке висеть бесконечно.
+        /// </summary>
         public async Task RunSaveOrderCheckAsync()
         {
-            var first = Save.SaveAsync(SaveKey, "{\"n\":1}");
-            var second = Save.SaveAsync(SaveKey, "{\"n\":2}");
-            await Task.WhenAll(first, second);
+            StandLog.Info("Порядок записей: запускаю две записи подряд.");
+
+            async Task<PlatformServiceResult> Write(int number)
+            {
+                var result = await Save.SaveAsync(SaveKey, "{\"n\":" + number + "}");
+                StandLog.Info($"Порядок записей: запись {number} завершена ({result.Status}).");
+                return result;
+            }
+
+            var both = Task.WhenAll(Write(1), Write(2));
+            var finished = await Task.WhenAny(both, YgCore.Core.RealtimeDelay.Delay(TimeSpan.FromSeconds(25)));
+            if (finished != both)
+            {
+                StandLog.Fail("Порядок записей: записи не завершились за 25 с (зависание).");
+                return;
+            }
+
             var loaded = await Save.LoadAsync(SaveKey);
-            StandLog.Check(loaded.IsSuccess && loaded.Value == "{\"n\":2}", $"Сохранение: порядок записей, итог='{loaded.Value}'");
+            StandLog.Check(loaded.IsSuccess && loaded.Value == "{\"n\":2}", $"Порядок записей: итог='{loaded.Value}'");
             await Save.DeleteAsync(SaveKey);
         }
 

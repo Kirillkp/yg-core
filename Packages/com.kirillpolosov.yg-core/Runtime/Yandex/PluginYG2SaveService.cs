@@ -31,7 +31,7 @@ namespace YgCore.Yandex
         private readonly MethodInfo saveConfirmedMethod;
         private readonly MethodInfo loadConfirmedMethod;
         private readonly Action sdkDataHandler;
-        private readonly SemaphoreSlim operationLock = new SemaphoreSlim(1, 1);
+        private readonly AsyncGate operationLock = new AsyncGate();
 
         private TaskCompletionSource<bool> pendingSdkData;
         private bool isDisposed;
