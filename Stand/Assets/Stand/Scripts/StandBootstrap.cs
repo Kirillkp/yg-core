@@ -65,6 +65,17 @@ namespace YgCoreStand
 
         private static void BuildScreen(VisualElement root)
         {
+            // В WebGL нет системных шрифтов, а шрифт UI Toolkit по умолчанию без кириллицы: подключаем свой (Roboto, Apache 2.0).
+            var font = Resources.Load<Font>("Fonts/Roboto-Regular");
+            if (font != null)
+            {
+                root.style.unityFontDefinition = new StyleFontDefinition(FontDefinition.FromFont(font));
+            }
+            else
+            {
+                Debug.LogWarning("[Стенд] Шрифт Resources/Fonts/Roboto-Regular не найден, кириллица в WebGL не отобразится.");
+            }
+
             root.style.flexGrow = 1;
             root.style.backgroundColor = Background;
             root.style.paddingTop = 20;
