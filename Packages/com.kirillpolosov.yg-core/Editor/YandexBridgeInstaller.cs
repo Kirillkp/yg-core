@@ -43,7 +43,7 @@ namespace YgCore.Editor
         /// <summary>Копирует мосты в проект, если их нет или они устарели. Возвращает true, если файлы изменены.</summary>
         public static bool Install(bool force)
         {
-            var package = PackageInfo.FindForAssembly(typeof(YandexBridgeInstaller).Assembly);
+            var package = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(YandexBridgeInstaller).Assembly);
             if (package == null)
             {
                 Debug.LogWarning("[yg-core] Не удалось определить папку пакета, мосты Яндекса не установлены.");
