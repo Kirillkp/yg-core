@@ -91,6 +91,11 @@ namespace YgCoreStand
                 ("Отправить результат", () => app.SubmitScoreAsync()),
                 ("Топ-5", () => app.GetTopAsync()));
 
+            var audioCard = Section(buttons, "Звук",
+                ("Звук вкл/выкл", () => { app.ToggleSound(); return Task.CompletedTask; }),
+                ("Клик", () => { app.PlayClick(); return Task.CompletedTask; }));
+            AddSoundStatus(audioCard);
+
             Section(buttons, "Покупки",
                 ("Каталог", () => app.ShowCatalogAsync()),
                 ("Купить расходуемый", () => app.BuyAsync("stand_consumable")),
@@ -273,7 +278,7 @@ namespace YgCoreStand
             return scroll;
         }
 
-        private static void Section(VisualElement parent, string name, params (string label, Func<Task> action)[] items)
+        private static VisualElement Section(VisualElement parent, string name, params (string label, Func<Task> action)[] items)
         {
             var card = new VisualElement();
             card.style.flexShrink = 0;
@@ -302,6 +307,20 @@ namespace YgCoreStand
             card.Add(row);
 
             parent.Add(card);
+            return card;
+        }
+
+        // Строка состояния звука обновляется несколько раз в секунду: так видно, как пауза рекламы глушит и возвращает звук.
+        private static void AddSoundStatus(VisualElement card)
+        {
+            var status = new Label();
+            status.style.color = TextMuted;
+            status.style.fontSize = 19;
+            status.style.whiteSpace = WhiteSpace.Normal;
+            status.style.marginTop = 8;
+            status.style.flexShrink = 0;
+            card.Add(status);
+            status.schedule.Execute(() => status.text = app.DescribeSound()).Every(250);
         }
 
         private static Button MakeButton(string label, Func<Task> action, bool small)

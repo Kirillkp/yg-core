@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using YgCore.Contracts;
+using YgCore.Core;
 using YgCore.Factories;
 using YgCore.Localization;
 
@@ -26,6 +27,17 @@ namespace YgCoreStand
         public IPurchasesService Purchases { get; private set; }
         public ISaveService Save { get; private set; }
 
+        // Звук и пауза собираются так же, как в игре: платформенные события превращаются в причины паузы,
+        // а директор звука реагирует на координатор пауз.
+        public IPauseCoordinator Pause { get; private set; }
+        public GameplayStateService State { get; private set; }
+        public SessionGameSettingsService Settings { get; private set; }
+        public StandAudioDirector Audio { get; private set; }
+
+        // Сколько секунд в редакторе держится пауза рекламы: мок-реклама заканчивается мгновенно, а паузу надо услышать.
+        private const float EditorAdSeconds = 3f;
+        private int adPauseToken;
+
         /// <summary>Создаёт сервисы через фабрики пакета, как это делает игра.</summary>
         public void Initialize()
         {
@@ -45,11 +57,75 @@ namespace YgCoreStand
             Purchases = PurchasesServiceFactory.Create();
             Save = SaveServiceFactory.Create(storageFieldName: StorageFieldName);
 
+            Pause = new PauseCoordinator();
+            State = new GameplayStateService(Pause);
+            // Звук выключен, пока его не включит кнопка: браузеры всё равно требуют жест игрока.
+            Settings = new SessionGameSettingsService(0.8f, 0.8f);
+            Settings.SetMusicEnabled(false);
+            Settings.SetSfxEnabled(false);
+            Audio = StandAudioDirector.Create(State, Pause, Settings);
+            State.CompleteBoot();
+            Pause.PauseChanged += (_, e) => StandLog.Info($"Пауза: {(e.IsPaused ? "да" : "нет")}, причины={Pause.ActiveReasons}");
+
             Auth.ProfileChanged += (_, e) => StandLog.Info($"Профиль изменился: авторизован={e.Profile.IsAuthorized}, имя='{e.Profile.DisplayName}'");
-            Ads.AdStarted += (_, e) => StandLog.Info($"Реклама началась: {e.PlacementId}");
-            Ads.AdFinished += (_, e) => StandLog.Info($"Реклама закончилась: {e.PlacementId}");
-            Lifecycle.PlatformPauseChanged += (_, e) => StandLog.Info($"Пауза платформы: {e.IsPaused}");
+            Ads.AdStarted += (_, e) =>
+            {
+                StandLog.Info($"Реклама началась: {e.PlacementId}");
+                adPauseToken++;
+                Pause.RequestPause(PauseReason.Ad);
+            };
+            Ads.AdFinished += (_, e) =>
+            {
+                StandLog.Info($"Реклама закончилась: {e.PlacementId}");
+                ReleaseAdPause();
+            };
+            Lifecycle.PlatformPauseChanged += (_, e) =>
+            {
+                StandLog.Info($"Пауза платформы: {e.IsPaused}");
+                if (e.IsPaused) Pause.RequestPause(PauseReason.Platform);
+                else Pause.ReleasePause(PauseReason.Platform);
+            };
             Language.LanguageChanged += (_, e) => StandLog.Info($"Язык сменился: {e.CurrentLanguage}");
+        }
+
+        // На платформе пауза снимается сразу по закрытию рекламы. В редакторе мок заканчивается мгновенно,
+        // поэтому пауза держится несколько секунд, а новая реклама за это время продлевает её (токен).
+        private async void ReleaseAdPause()
+        {
+            if (Application.isEditor)
+            {
+                var token = adPauseToken;
+                StandLog.Info($"Мок-реклама: пауза звука держится {EditorAdSeconds:0} с, имитация показа.");
+                await Task.Delay(TimeSpan.FromSeconds(EditorAdSeconds));
+                if (token != adPauseToken) return;
+            }
+
+            Pause.ReleasePause(PauseReason.Ad);
+        }
+
+        /// <summary>Включает или выключает музыку и эффекты вместе.</summary>
+        public void ToggleSound()
+        {
+            var enable = !(Settings.IsMusicEnabled || Settings.IsSfxEnabled);
+            Settings.SetMusicEnabled(enable);
+            Settings.SetSfxEnabled(enable);
+            StandLog.Info(enable ? "Звук включён." : "Звук выключен.");
+        }
+
+        public void PlayClick()
+        {
+            Audio.Play(StandAudioDirector.ClickId);
+            StandLog.Info(Settings.IsSfxEnabled ? "Клик запрошен." : "Клик запрошен, но эффекты выключены.");
+        }
+
+        /// <summary>Строка состояния звука для экрана: настройки, причины паузы, что звучит на самом деле.</summary>
+        public string DescribeSound()
+        {
+            var music = Audio.MusicSource;
+            var playing = music != null && music.isPlaying;
+            var enabled = Settings.IsMusicEnabled || Settings.IsSfxEnabled;
+            return $"Звук: {(enabled ? "ВКЛ" : "выкл")}   музыка играет: {(playing ? "да" : "нет")}   " +
+                   $"пауза: {Pause.ActiveReasons}   AudioListener.pause: {(AudioListener.pause ? "да" : "нет")}";
         }
 
         /// <summary>Какие сервисы реально работают на платформе, а какие заглушки/моки.</summary>
