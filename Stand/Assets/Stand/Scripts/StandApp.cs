@@ -175,10 +175,11 @@ namespace YgCoreStand
             StandLog.Info($"Текущий профиль: авторизован={p.IsAuthorized}, id='{p.PlayerId}', имя='{p.DisplayName}'");
         }
 
-        public async Task SubmitScoreAsync()
+        /// <summary>Отправляет в таблицу `stand` значение, введённое на экране (или случайное, если значение не задано).</summary>
+        public async Task SubmitScoreAsync(long? score = null)
         {
-            var score = UnityEngine.Random.Range(1, 1000);
-            Describe($"Лидерборд: отправка {score}", await Leaderboard.SubmitScoreAsync("stand", score));
+            var value = score ?? UnityEngine.Random.Range(1, 1000);
+            Describe($"Лидерборд: отправка {value}", await Leaderboard.SubmitScoreAsync("stand", value));
         }
 
         public async Task GetTopAsync()

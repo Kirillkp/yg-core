@@ -25,6 +25,13 @@ namespace YgCoreStand
             UnityEngine.Object.DontDestroyOnLoad(go);
             var director = go.AddComponent<StandAudioDirector>();
 
+            // В собранной игре звук слышен только при наличии AudioListener (обычно он на камере). У стенда нет ни сцены,
+            // ни камеры, поэтому слушатель добавляем сами. Редактор этого не показывает: он слушает через окно Scene.
+            if (UnityEngine.Object.FindFirstObjectByType<AudioListener>() == null)
+            {
+                go.AddComponent<AudioListener>();
+            }
+
             Set(director, "musicClip", MakeMusic());
             var entry = new SfxEntry { id = ClickId, clip = MakeClick(), volume = 1f, minInterval = 0.05f, pitchJitter = 0f };
             Set(director, "sfx", new[] { entry });

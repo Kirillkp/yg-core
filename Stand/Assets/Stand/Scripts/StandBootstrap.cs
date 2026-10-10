@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -136,9 +137,10 @@ namespace YgCoreStand
                 ("Войти", () => app.SignInAsync()),
                 ("Профиль", () => { app.ShowProfile(); return Task.CompletedTask; }));
 
-            Section(buttons, "Лидерборд",
-                ("Отправить результат", () => app.SubmitScoreAsync()),
+            var boardCard = Section(buttons, "Лидерборд",
+                ("Случайный результат", () => app.SubmitScoreAsync()),
                 ("Топ-5", () => app.GetTopAsync()));
+            AddScoreInput(boardCard);
 
             var audioCard = Section(buttons, "Звук",
                 ("Звук вкл/выкл", () => { app.ToggleSound(); return Task.CompletedTask; }),
@@ -357,6 +359,51 @@ namespace YgCoreStand
 
             parent.Add(card);
             return card;
+        }
+
+        // Поле для ввода своего значения и кнопка его отправки в таблицу рекордов.
+        private static void AddScoreInput(VisualElement card)
+        {
+            var row = new VisualElement();
+            row.style.flexDirection = FlexDirection.Row;
+            row.style.alignItems = Align.Center;
+            row.style.flexShrink = 0;
+            row.style.marginTop = 8;
+
+            var field = new TextField { value = "100", maxLength = 12 };
+            field.style.width = 220;
+            field.style.marginRight = 8;
+            field.style.flexShrink = 0;
+            field.style.fontSize = 26;
+            field.style.height = 64;
+            var input = field.Q(className: "unity-base-text-field__input") ?? field;
+            input.style.backgroundColor = Background;
+            input.style.color = TextMain;
+            input.style.height = 64;
+            input.style.paddingLeft = 14;
+            input.style.unityTextAlign = TextAnchor.MiddleLeft;
+            input.style.borderTopWidth = input.style.borderBottomWidth = input.style.borderLeftWidth = input.style.borderRightWidth = 1;
+            input.style.borderTopColor = input.style.borderBottomColor = input.style.borderLeftColor = input.style.borderRightColor = Accent;
+            Round(input, 8);
+            field.RegisterValueChangedCallback(change =>
+            {
+                // Только цифры: в таблицу уходит целое число.
+                var digits = new string(change.newValue.Where(char.IsDigit).ToArray());
+                if (digits != change.newValue) field.SetValueWithoutNotify(digits);
+            });
+
+            row.Add(field);
+            row.Add(MakeButton("Отправить значение", () =>
+            {
+                if (!long.TryParse(field.value, out var score))
+                {
+                    StandLog.Fail("Введите целое число для таблицы рекордов.");
+                    return Task.CompletedTask;
+                }
+
+                return app.SubmitScoreAsync(score);
+            }, small: false));
+            card.Add(row);
         }
 
         // Строка состояния звука обновляется несколько раз в секунду: так видно, как пауза рекламы глушит и возвращает звук.
