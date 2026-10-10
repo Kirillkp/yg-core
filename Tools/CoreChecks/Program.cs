@@ -141,6 +141,9 @@ static class P
         // Модуль Save: политики защиты прогресса.
         SaveChecks.Run(Check);
 
+        // Модуль Store: покупки, экипировка, выдача в два шага.
+        StoreChecks.Run(Check);
+
         Console.WriteLine(fails == 0 ? "\nВсе проверки пройдены." : $"\nПровалено: {fails}");
         return fails == 0 ? 0 : 1;
     }

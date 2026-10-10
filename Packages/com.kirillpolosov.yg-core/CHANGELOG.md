@@ -16,12 +16,13 @@
 - Модуль **Фабрики и заглушки** (`YgCore.Factories`), пока только заглушки «платформа недоступна». Фабрики придут вместе с Яндекс-модулем. Документ: `modules/factories.md`.
 - Модуль **Яндекс-реализация** (`YgCore.Yandex` и папка `YandexBridge` без `.asmdef`): сервисы рекламы, авторизации, покупок, сохранения, лидерборда, локализации, готовности и жизненного цикла на PluginYG2; мосты и три `.jslib`; заплатки с подтверждением сохранения и покупок. Документ: `modules/yandex.md`.
 - Модуль **Сохранения и прогресс** (`YgCore.Save`): `ProgressionService<TData>` (загрузка, защита непрочитанного прогресса от затирания, пакетная и немедленная запись, повтор после сбоя, лимит размера, слияние гостя с облаком, сброс), `ProgressionCodec<TData>`, `ProgressionData` (конверт), `IProgressionSchema<TData>` и `IProgressionBinding<TData>` для игры, помощники `ProgressionLists` и `SettingsProgressData`. Формат JSON совместим с «Обби Потоп». Документ: `modules/save.md`.
+- Модуль **Магазин** (`YgCore.Store`): `SessionStoreService` (покупка за монеты, покупка за реальные деньги с выдачей в два шага «запись прогресса, затем подтверждение платформе», защита от двойной выдачи по токену, невыданные покупки при старте, экипировка со снятием аксессуаров, восстановление из сохранения), `StoreItemDefinition` с типами товара (`Equippable`, `CurrencyPack`, `Unlock`), типизированные результаты `StoreStatus` и ключи строк `StoreStatusKeys`, правила слотов `IStoreEquipmentRules` и `StoreSlotBlockingRules`, `EquippedItemProgressData` для прогресса. Формат сохранённого совместим с «Обби Потоп». Документ: `modules/store.md`.
 - **Фабрики** сервисов в `YgCore.Factories` (редактор: мок, WebGL с модулем PluginYG2: Яндекс, иначе заглушка).
 - Описание доработок PluginYG2 (`Documentation~/patches`).
 - Конструктор `SessionGameSettingsService(music, sfx)` для своих стартовых громкостей (без параметров значения прежние: 0.5 и 0.1).
 - Файлы `.meta` для пакета (нужны Unity для пакетов из git), генератор `Tools/generate-meta.py`.
 - Проверка Яндекс-модуля без Unity: `Tools/YandexChecks` (47 проверок с заглушкой PluginYG2), компиляция ветки WebGL, `Tools/check-jslib.py` (согласованность имён C# и JavaScript).
-- Проверка логики без Unity: `Tools/CoreChecks` (90 проверок: Core, Save, каталог локализации, моки, заглушки) и `Tools/check-samples.py` (образец кода в документации совпадает с проверяемым).
+- Проверка логики без Unity: `Tools/CoreChecks` (138 проверок: Core, Save, Store, каталог локализации, моки, заглушки) и `Tools/check-samples.py` (образец кода в документации совпадает с проверяемым).
 
 ## [0.0.0] - 2026-10-09
 
