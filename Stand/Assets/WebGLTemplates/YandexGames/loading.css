@@ -62,3 +62,8 @@
     color: #E8EAED;
     font-size: 16px;
 }
+
+/* Атрибут hidden должен скрывать экран, несмотря на display: flex у #loading-cover в style.css. */
+#loading-cover[hidden] {
+    display: none !important;
+}

@@ -51,6 +51,7 @@
         render();
         root.setAttribute('aria-hidden', 'true');
         root.hidden = true;
+        root.style.display = 'none';
     }
 
     window.YgLoading = {
