@@ -1,6 +1,6 @@
 # Модуль: Локализация
 
-Сборки: `YgCore.Localization` и необязательная `YgCore.Localization.UI` · Пространства имён: `YgCore.Localization`, `YgCore.Localization.UI` · С версии: `v0.1.0` (пока в разделе Unreleased) · Статус: перенесён из «Обби Потоп» (каталог строк и подстановка в надписи; определение языка платформы живёт в Яндекс-модуле)
+Сборки: `YgCore.Localization` и необязательная `YgCore.Localization.UI` · Пространства имён: `YgCore.Localization`, `YgCore.Localization.UI` · С версии: `v0.1.0` · Статус: перенесён из «Обби Потоп» (каталог строк и подстановка в надписи; определение языка платформы живёт в Яндекс-модуле)
 
 `YgCore.Localization` не зависит от других сборок. `YgCore.Localization.UI` подключается сама только если в проекте есть uGUI.
 

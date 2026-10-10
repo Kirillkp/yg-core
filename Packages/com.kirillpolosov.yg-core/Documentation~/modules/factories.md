@@ -1,6 +1,6 @@
 # Модуль: Фабрики и заглушки
 
-Сборка: `YgCore.Factories` · Пространство имён: `YgCore.Factories` · С версии: `v0.1.0` (пока в разделе Unreleased) · Статус: перенесён из «Обби Потоп»
+Сборка: `YgCore.Factories` · Пространство имён: `YgCore.Factories` · С версии: `v0.1.0` · Статус: перенесён из «Обби Потоп»
 
 Зависит от `YgCore.Contracts`, `YgCore.Localization`, `YgCore.Mocks`, `YgCore.Yandex`.
 

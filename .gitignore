@@ -45,3 +45,11 @@ Tools/**/obj/
 # Стенд: служебные журналы PluginYG2 (сам плагин коммитится: лицензия CC0).
 /Stand/Assets/PluginYourGames/Editor/BuildLogYG2.txt
 /Stand/Assets/PluginYourGames/Editor/BuildLogYG2.txt.meta
+
+# Служебные файлы Unity в корне репозитория (корень открывали в Hub по ошибке, проект стенда лежит в Stand/).
+/ProjectSettings/
+/Assets/
+/Assets.meta
+/yg-core.slnx
+/Packages/manifest.json
+/Packages/packages-lock.json

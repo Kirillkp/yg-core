@@ -19,16 +19,16 @@
 
 | Модуль | Документ | Статус |
 |---|---|---|
-| Core (состояния, пауза, экономика, настройки) | [modules/core.md](modules/core.md) | перенесён, не выпущен |
-| Контракты платформы | [modules/contracts.md](modules/contracts.md) | перенесён, не выпущен |
-| Сохранения и прогресс | [modules/save.md](modules/save.md) | перенесён, не выпущен |
-| Магазин (логика) | [modules/store.md](modules/store.md) | перенесён, не выпущен |
-| Аудио | [modules/audio.md](modules/audio.md) | перенесён, не выпущен |
-| Локализация (каталог строк, подстановка в надписи) | [modules/localization.md](modules/localization.md) | перенесён, не выпущен |
-| Web-качество | [modules/web-quality.md](modules/web-quality.md) | перенесён, не выпущен |
-| Фабрики и заглушки | [modules/factories.md](modules/factories.md) | перенесён, не выпущен |
-| Моки редактора | [modules/mocks.md](modules/mocks.md) | перенесён, не выпущен |
-| Яндекс-реализация и заплатки PluginYG2 | [modules/yandex.md](modules/yandex.md) | перенесён, не проверен в Unity |
+| Core (состояния, пауза, экономика, настройки) | [modules/core.md](modules/core.md) | выпущен в v0.1.0 |
+| Контракты платформы | [modules/contracts.md](modules/contracts.md) | выпущен в v0.1.0 |
+| Сохранения и прогресс | [modules/save.md](modules/save.md) | выпущен в v0.1.0 |
+| Магазин (логика) | [modules/store.md](modules/store.md) | выпущен в v0.1.0 |
+| Аудио | [modules/audio.md](modules/audio.md) | выпущен в v0.1.0 |
+| Локализация (каталог строк, подстановка в надписи) | [modules/localization.md](modules/localization.md) | выпущен в v0.1.0 |
+| Web-качество | [modules/web-quality.md](modules/web-quality.md) | выпущен в v0.1.0 |
+| Фабрики и заглушки | [modules/factories.md](modules/factories.md) | выпущен в v0.1.0 |
+| Моки редактора | [modules/mocks.md](modules/mocks.md) | выпущен в v0.1.0 |
+| Яндекс-реализация и заплатки PluginYG2 | [modules/yandex.md](modules/yandex.md) | выпущен в v0.1.0, проверен на стенде на Яндексе |
 
 Файл модуля появляется вместе с переносом кода. Строка статуса обновляется в том же изменении.
 

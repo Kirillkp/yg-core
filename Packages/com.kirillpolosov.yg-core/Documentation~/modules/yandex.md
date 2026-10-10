@@ -1,6 +1,6 @@
 # Модуль: Яндекс-реализация (PluginYG2)
 
-Сборка: `YgCore.Yandex` + мосты из папки `Runtime/YandexBridge~`, которые установщик (`YgCore.Editor`) копирует в `Assets/YgCore/YandexBridge` игры, в `Assembly-CSharp` · Пространства имён: `YgCore.Yandex`, `YgCore.YandexBridge` · С версии: `v0.1.0` (пока в разделе Unreleased) · Статус: перенесён из «Обби Потоп», **не проверен в Unity и на Яндексе** (проверен только вне Unity, см. «Как проверить»)
+Сборка: `YgCore.Yandex` + мосты из папки `Runtime/YandexBridge~`, которые установщик (`YgCore.Editor`) копирует в `Assets/YgCore/YandexBridge` игры, в `Assembly-CSharp` · Пространства имён: `YgCore.Yandex`, `YgCore.YandexBridge` · С версии: `v0.1.0` · Статус: перенесён из «Обби Потоп», проверен на стенде на Яндексе (v0.1.0): реклама, авторизация, лидерборд, покупки, сохранение, язык, готовность, пауза платформы
 
 Зависит от `YgCore.Core`, `YgCore.Contracts`, `YgCore.Localization`. Работает с PluginYG2 v2.0092 (см. [compatibility.md](../compatibility.md)).
 
