@@ -96,7 +96,7 @@ namespace YgCoreStand
             {
                 var token = adPauseToken;
                 StandLog.Info($"Мок-реклама: пауза звука держится {EditorAdSeconds:0} с, имитация показа.");
-                await Task.Delay(TimeSpan.FromSeconds(EditorAdSeconds));
+                await YgCore.Core.RealtimeDelay.Delay(TimeSpan.FromSeconds(EditorAdSeconds));
                 if (token != adPauseToken) return;
             }
 

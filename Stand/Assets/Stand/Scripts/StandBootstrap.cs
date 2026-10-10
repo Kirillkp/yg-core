@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UIElements;
+using YgCore.Core;
 
 namespace YgCoreStand
 {
@@ -50,17 +51,43 @@ namespace YgCoreStand
             app = new StandApp();
             app.Initialize();
             StandLog.Info("Версия пакета: " + StandVersion.Read());
-            app.ReportAvailability();
 
             // Как и игра: сообщаем платформе о готовности сами при старте. Пока этого нет, страница держит загрузочный экран
             // («Запускаем игру… 99%»), а кнопка «Готовность» под ним недоступна.
-            _ = SendReadyAsync();
+            _ = StartSequenceAsync();
         }
 
-        private static async Task SendReadyAsync()
+        // SDK Яндекса инициализируется уже после старта игры, поэтому доступность сервисов проверяем не сразу,
+        // а когда платформа сообщит о готовности (в редакторе моки доступны сразу).
+        private static async Task StartSequenceAsync()
         {
-            try { await app.MarkReadyAsync(); }
-            catch (Exception e) { StandLog.Fail("Исключение при сообщении о готовности: " + e.Message); }
+            try
+            {
+                await app.MarkReadyAsync();
+
+                const int maxWaitMilliseconds = 20000;
+                var waited = 0;
+                while (!app.Readiness.IsPlatformAvailable && waited < maxWaitMilliseconds)
+                {
+                    await RealtimeDelay.Delay(TimeSpan.FromMilliseconds(250));
+                    waited += 250;
+                }
+
+                if (!app.Readiness.IsPlatformAvailable)
+                {
+                    StandLog.Fail($"SDK не стал доступен за {maxWaitMilliseconds / 1000} с.");
+                }
+                else if (waited > 0)
+                {
+                    StandLog.Info($"SDK стал доступен через {waited} мс после старта.");
+                }
+
+                app.ReportAvailability();
+            }
+            catch (Exception e)
+            {
+                StandLog.Fail("Исключение при старте: " + e.Message);
+            }
         }
 
         private static void BuildScreen(VisualElement root)
@@ -97,6 +124,7 @@ namespace YgCoreStand
 
             Section(buttons, "Готовность и геймплей",
                 ("Готовность", () => app.MarkReadyAsync()),
+                ("Проверить сервисы", () => { app.ReportAvailability(); return Task.CompletedTask; }),
                 ("Геймплей: старт", () => { app.SetGameplay(true); return Task.CompletedTask; }),
                 ("Геймплей: стоп", () => { app.SetGameplay(false); return Task.CompletedTask; }));
 
