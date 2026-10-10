@@ -1,0 +1,17 @@
+{
+    "name": "YgCore.Factories",
+    "rootNamespace": "YgCore.Factories",
+    "references": [
+        "YgCore.Contracts",
+        "YgCore.Localization"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

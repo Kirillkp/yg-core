@@ -23,10 +23,10 @@
 | Сохранения и прогресс | modules/save.md | не перенесён |
 | Магазин (логика) | modules/store.md | не перенесён |
 | Аудио | modules/audio.md | не перенесён |
-| Локализация | modules/localization.md | не перенесён |
+| Локализация (каталог строк) | [modules/localization.md](modules/localization.md) | частично, не выпущен |
 | Web-качество | modules/web-quality.md | не перенесён |
-| Фабрики и заглушки | modules/factories.md | не перенесён |
-| Моки редактора | modules/mocks.md | не перенесён |
+| Фабрики и заглушки | [modules/factories.md](modules/factories.md) | частично (заглушки), не выпущен |
+| Моки редактора | [modules/mocks.md](modules/mocks.md) | перенесён, не выпущен |
 | Яндекс-реализация и заплатки PluginYG2 | modules/yandex.md | не перенесён |
 
 Файл модуля появляется вместе с переносом кода. Строка статуса обновляется в том же изменении.

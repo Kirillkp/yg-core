@@ -13,10 +13,11 @@
 Сборка игры (старт) ─→ Factories, Core
 Стенд ──────────────→ Factories, Save, Store, Audio, Localization, Core, WebQuality
 
-Save, Store, Localization → Core, Contracts
+Save, Store → Core, Contracts
+Localization ───────→ (ни от чего не зависит)
 Audio ──────────────→ Core
-Factories ──────────→ Contracts, Mocks, Yandex
-Mocks ──────────────→ Contracts
+Factories ──────────→ Contracts, Localization, Mocks, Yandex
+Mocks ──────────────→ Contracts, Localization
 Yandex ─────────────→ Contracts, PluginYG2, JS-заплатки
 
 Core, Contracts ────→ (ни от чего не зависят)
@@ -31,11 +32,11 @@ Core, Contracts ────→ (ни от чего не зависят)
 | `YgCore.Save` | схема, миграции, кодек сохранения | Core, Contracts |
 | `YgCore.Store` | каталог и покупки | Core, Contracts |
 | `YgCore.Audio` | музыка и звуки | Core |
-| `YgCore.Localization` | строки и выбор языка | Core, Contracts |
+| `YgCore.Localization` | каталог строк игры и нормализация языка | ничего |
 | `YgCore.WebQuality` | настройки качества для браузера | ничего |
-| `YgCore.Mocks` | фальшивая платформа | Contracts |
+| `YgCore.Mocks` | фальшивая платформа | Contracts, Localization |
 | `YgCore.Yandex` | PluginYG2 и заплатки | Contracts, Core |
-| `YgCore.Factories` | выбор реализации | Contracts, Mocks, Yandex |
+| `YgCore.Factories` | выбор реализации, заглушки «недоступно» | Contracts, Localization, Mocks, Yandex |
 
 Список согласован с планом переноса и уточняется вместе с кодом.
 
