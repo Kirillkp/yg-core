@@ -41,3 +41,7 @@ crashlytics-build.properties
 # Результаты сборки вспомогательных dotnet-проектов в Tools/
 Tools/**/bin/
 Tools/**/obj/
+
+# Стенд: служебные журналы PluginYG2 (сам плагин коммитится: лицензия CC0).
+/Stand/Assets/PluginYourGames/Editor/BuildLogYG2.txt
+/Stand/Assets/PluginYourGames/Editor/BuildLogYG2.txt.meta

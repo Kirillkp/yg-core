@@ -1,0 +1,64 @@
+/* Экран загрузки стенда: нейтральный тёмный, без графики игры. */
+.yg-loading {
+    background: #16181C;
+    color: #E8EAED;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.yg-panel {
+    width: min(86vw, 520px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.yg-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.yg-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #98A0AB;
+    font-size: 16px;
+}
+
+.yg-caption-end { display: flex; align-items: center; gap: 10px; }
+.yg-value { font-variant-numeric: tabular-nums; }
+
+#unity-progress-bar-empty {
+    height: 10px;
+    border-radius: 6px;
+    background: #30353D;
+    overflow: hidden;
+}
+
+#unity-progress-bar-full {
+    width: 0;
+    height: 100%;
+    background: #6AA6FF;
+}
+
+.spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #3A3F48;
+    border-top-color: #6AA6FF;
+    border-radius: 50%;
+    animation: yg-spin 0.9s linear infinite;
+}
+
+@keyframes yg-spin { to { transform: rotate(360deg); } }
+
+.yg-retry {
+    align-self: flex-start;
+    padding: 10px 18px;
+    border: 1px solid #3A3F48;
+    border-radius: 8px;
+    background: #30353D;
+    color: #E8EAED;
+    font-size: 16px;
+}

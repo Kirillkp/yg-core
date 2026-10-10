@@ -1,0 +1,5 @@
+<!-- Сервисы пакета обращаются к PluginYG2 (он лежит в Assembly-CSharp) по имени через отражение.
+     Без этого файла обрезка кода при сборке WebGL может удалить то, что видно только по имени. -->
+<linker>
+  <assembly fullname="Assembly-CSharp" preserve="all"/>
+</linker>
