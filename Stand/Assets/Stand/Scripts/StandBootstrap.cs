@@ -32,6 +32,8 @@ namespace YgCoreStand
         private static ScrollView logView;
         private static Label counters;
         private static string lastToken = string.Empty;
+        private static readonly System.Collections.Generic.List<(string name, VisualElement card)> Sections =
+            new System.Collections.Generic.List<(string name, VisualElement card)>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Start()
@@ -123,7 +125,7 @@ namespace YgCoreStand
             var buttons = NewScroll();
             root.Add(buttons);
 
-            Section(buttons, "Готовность и геймплей",
+            Section(buttons, "Старт",
                 ("Готовность", () => app.MarkReadyAsync()),
                 ("Проверить сервисы", () => { app.ReportAvailability(); return Task.CompletedTask; }),
                 ("Геймплей: старт", () => { app.SetGameplay(true); return Task.CompletedTask; }),
@@ -159,7 +161,44 @@ namespace YgCoreStand
                 ("Сохранение: порядок", () => app.RunSaveOrderCheckAsync()),
                 ("Язык", () => app.RunLanguageCheckAsync()));
 
+            BuildTabs(root, buttons);
             BuildLog(root);
+        }
+
+        // Вкладки по секциям: показывается одна секция, поэтому всё помещается на любом экране без прокрутки
+        // (колесо мыши и перетаскивание в WebGL для списка не срабатывают).
+        private static void BuildTabs(VisualElement root, VisualElement buttons)
+        {
+            var bar = new VisualElement();
+            bar.style.flexDirection = FlexDirection.Row;
+            bar.style.flexWrap = Wrap.Wrap;
+            bar.style.flexShrink = 0;
+            bar.style.marginBottom = 6;
+
+            var tabs = new System.Collections.Generic.List<Button>();
+            void Select(int index)
+            {
+                for (var i = 0; i < Sections.Count; i++)
+                {
+                    Sections[i].card.style.display = i == index ? DisplayStyle.Flex : DisplayStyle.None;
+                    var active = i == index;
+                    tabs[i].style.backgroundColor = active ? Accent : Button;
+                    tabs[i].style.color = active ? Background : TextMain;
+                }
+            }
+
+            for (var i = 0; i < Sections.Count; i++)
+            {
+                var index = i;
+                var tab = MakeButton(Sections[i].name, () => { Select(index); return Task.CompletedTask; }, small: true);
+                tab.style.marginBottom = 6;
+                tab.style.fontSize = 19;
+                tabs.Add(tab);
+                bar.Add(tab);
+            }
+
+            root.Insert(root.IndexOf(buttons), bar);
+            Select(0);
         }
 
         private static void BuildLog(VisualElement root)
@@ -358,6 +397,7 @@ namespace YgCoreStand
             card.Add(row);
 
             parent.Add(card);
+            Sections.Add((name, card));
             return card;
         }
 
