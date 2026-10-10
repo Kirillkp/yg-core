@@ -55,9 +55,11 @@ namespace YgCoreStand
             title.style.color = Color.white;
             title.style.unityFontStyleAndWeight = FontStyle.Bold;
             title.style.marginBottom = 8;
+            title.style.flexShrink = 0;
             root.Add(title);
 
-            var buttons = new ScrollView { style = { flexGrow = 1, flexBasis = 0 } };
+            // Кнопки и журнал делят экран поровну и не вытесняют друг друга ни на телефоне, ни в окне редактора.
+            var buttons = new ScrollView { style = { flexGrow = 1, flexShrink = 1, flexBasis = 0, minHeight = 200 } };
             root.Add(buttons);
 
             Section(buttons, "Готовность и геймплей",
@@ -89,7 +91,7 @@ namespace YgCoreStand
                 ("Сохранение: порядок", () => app.RunSaveOrderCheckAsync()),
                 ("Язык", () => app.RunLanguageCheckAsync()));
 
-            logView = new ScrollView { style = { height = 520, backgroundColor = Panel, marginTop = 8, paddingLeft = 8, paddingTop = 4 } };
+            logView = new ScrollView { style = { flexGrow = 1, flexShrink = 1, flexBasis = 0, minHeight = 200, backgroundColor = Panel, marginTop = 8, paddingLeft = 8, paddingTop = 4 } };
             root.Add(logView);
             StandLog.LineAdded += AppendLine;
         }

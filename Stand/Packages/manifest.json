@@ -1,11 +1,13 @@
 {
   "dependencies": {
     "com.kirillpolosov.yg-core": "file:../../Packages/com.kirillpolosov.yg-core",
+    "com.unity.ai.assistant": "2.20.0-pre.2",
+    "com.unity.ai.inference": "2.6.1",
+    "com.unity.pipeline": "0.7.0-exp.1",
     "com.unity.modules.audio": "1.0.0",
     "com.unity.modules.jsonserialize": "1.0.0",
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
-    "com.unity.modules.unitywebrequest": "1.0.0",
-    "com.unity.pipeline": "0.7.0-exp.1"
+    "com.unity.modules.unitywebrequest": "1.0.0"
   }
 }
