@@ -10,8 +10,7 @@ namespace YgCore.Audio
     ///
     /// Класс решает общие задачи: две отдельные шины (музыка и эффекты) с громкостью из настроек игрока,
     /// пул голосов для эффектов с ограничением частоты, приглушение музыки на паузе и экране результата,
-    /// остановку музыки при жёсткой паузе (реклама, платформа, покупка, фокус; эффекты и зацикленные звуки
-    /// при этом по умолчанию продолжают играть, см. <c>silenceEffectsOnHardPause</c>), заставку на экране результата.
+    /// остановку всего звука при жёсткой паузе (реклама, платформа, покупка, фокус), заставку на экране результата.
     ///
     /// Что именно звучит в игре (бег, монеты, вода, магазин) знает только игра. Поэтому игра наследует этот класс,
     /// в <see cref="OnInitialized"/> подписывается на свои события и вызывает <see cref="Play"/>,
@@ -65,8 +64,8 @@ namespace YgCore.Audio
         private float volumeCurve = 1.5f;
         [SerializeField, Tooltip("Сколько эффектов могут звучать одновременно.")]
         private int voices = 10;
-        [SerializeField, Tooltip("Останавливать ли эффекты и зацикленные звуки при жёсткой паузе (реклама, платформа, покупка, фокус, отсчёт). По умолчанию выключено, как в «Обби Потоп»: останавливается только музыка.")]
-        private bool silenceEffectsOnHardPause;
+        [SerializeField, Tooltip("Останавливать ли эффекты и зацикленные звуки при жёсткой паузе (реклама, платформа, покупка, фокус), а не только музыку. По умолчанию включено. Выключайте только если эффекты должны звучать во время таких пауз.")]
+        private bool silenceEffectsOnHardPause = true;
 #pragma warning restore 0649
 
         private readonly Dictionary<int, SfxEntry> map = new Dictionary<int, SfxEntry>();
@@ -130,6 +129,12 @@ namespace YgCore.Audio
         {
             // До Initialize источников звука ещё нет.
             if (sfxSources == null || (Settings != null && !Settings.IsSfxEnabled))
+            {
+                return;
+            }
+
+            // Во время жёсткой паузы (например, рекламы) новые эффекты не запускаем: иначе они зазвучат сразу после неё.
+            if (silenceEffectsOnHardPause && IsHardPaused())
             {
                 return;
             }
@@ -239,6 +244,12 @@ namespace YgCore.Audio
             }
         }
 
+        /// <summary>Идёт ли сейчас жёсткая пауза звука (реклама, платформа, покупка, фокус).</summary>
+        protected bool IsHardPaused()
+        {
+            return PauseCoordinator != null && AudioPolicy.IsHardPause(PauseCoordinator.ActiveReasons);
+        }
+
         /// <summary>Громкость музыки по настройкам игрока.</summary>
         protected float MusicVolume()
         {
@@ -270,8 +281,9 @@ namespace YgCore.Audio
             music = CreateSource("Music", true, false);
             music.clip = musicClip;
 
-            // Эффекты и зацикленные звуки по умолчанию игнорируют паузу слушателя: они должны звучать, когда
-            // игра на паузе (звуки кнопок в меню паузы). Музыка и заставка паузу слушателя учитывают.
+            // Жёсткая пауза (реклама, платформа, покупка, фокус) ставит на паузу слушателя, и по умолчанию ей подчиняются
+            // все источники. Пауза самим игроком слушателя не затрагивает, поэтому звуки кнопок в меню паузы работают.
+            // Если silenceEffectsOnHardPause выключено, эффекты и зацикленные звуки паузу слушателя игнорируют.
             var effectsIgnoreListenerPause = !silenceEffectsOnHardPause;
             jingle = CreateSource("Result Jingle", false, false);
             sfxSources = new AudioSource[Mathf.Max(4, voices)];
@@ -382,11 +394,11 @@ namespace YgCore.Audio
 
         private void OnPauseChanged(object sender, PauseChangedEventArgs args)
         {
-            // Платформа, реклама, покупка и потеря фокуса ставят на паузу слушателя: останавливаются музыка и заставка,
-            // а эффекты и зацикленные звуки зависят от настройки silenceEffectsOnHardPause. Пауза игрока только приглушает
-            // музыку (в ApplyVolumes) и гасит зацикленные звуки с пометкой «гасить на паузе игрока».
-            AudioListener.pause = PauseCoordinator != null
-                && AudioPolicy.IsHardPause(PauseCoordinator.ActiveReasons);
+            // Платформа, реклама, покупка и потеря фокуса ставят на паузу слушателя: звук останавливается целиком
+            // (эффекты и зацикленные звуки зависят от настройки silenceEffectsOnHardPause). Пауза игрока и отсчёт
+            // слушателя не затрагивают: пауза игрока приглушает музыку (в ApplyVolumes) и гасит зацикленные звуки
+            // с пометкой «гасить на паузе игрока».
+            AudioListener.pause = IsHardPaused();
             ApplyVolumes();
         }
     }

@@ -84,9 +84,11 @@ static class AudioChecks
         check("правила: громкость вне 0..1 ограничивается", Near(AudioPolicy.BusVolume(true, 9f, 1.5f, 0.7f), 0.7f) && AudioPolicy.BusVolume(true, -1f, 1.5f, 0.7f) == 0f);
         check("правила: приглушение музыки по состоянию", AudioPolicy.MusicDuck(AppState.Result, 0.25f, 0.4f) == 0.25f && AudioPolicy.MusicDuck(AppState.Pause, 0.25f, 0.4f) == 0.4f && AudioPolicy.MusicDuck(AppState.Run, 0.25f, 0.4f) == 1f);
         check("правила: пауза игрока не жёсткая", !AudioPolicy.IsHardPause(PauseReason.User) && !AudioPolicy.IsHardPause(PauseReason.None));
-        check("правила: реклама, платформа, покупка, фокус и отсчёт жёсткие",
+        check("правила: реклама, платформа, покупка и фокус жёсткие",
             AudioPolicy.IsHardPause(PauseReason.Ad) && AudioPolicy.IsHardPause(PauseReason.Platform) && AudioPolicy.IsHardPause(PauseReason.Purchase)
-            && AudioPolicy.IsHardPause(PauseReason.Focus) && AudioPolicy.IsHardPause(PauseReason.Countdown) && AudioPolicy.IsHardPause(PauseReason.User | PauseReason.Ad));
+            && AudioPolicy.IsHardPause(PauseReason.Focus) && AudioPolicy.IsHardPause(PauseReason.User | PauseReason.Ad) && AudioPolicy.IsHardPause(PauseReason.Ad | PauseReason.Countdown));
+        check("правила: отсчёт звук не останавливает (ни сам, ни вместе с паузой игрока)",
+            !AudioPolicy.IsHardPause(PauseReason.Countdown) && !AudioPolicy.IsHardPause(PauseReason.Countdown | PauseReason.User));
         var throttle = new SfxThrottle();
         check("ограничитель: первый звук разрешён, повтор раньше интервала нет, позже да",
             throttle.TryAcquire(1, 10f, 0.5f) && !throttle.TryAcquire(1, 10.2f, 0.5f) && throttle.TryAcquire(1, 10.6f, 0.5f) && throttle.TryAcquire(2, 10.2f, 0.5f));
@@ -97,7 +99,7 @@ static class AudioChecks
         var r = new Rig();
         check("директор: созданы источники (музыка, заставка, 10 голосов, 2 зацикленных)", r.Director.gameObject.GetComponentsInChildren<AudioSource>().Count == 1 + 1 + 10 + 2);
         check("директор: музыка играет сразу, на нужном клипе и зациклена", r.Source("Music").isPlaying && r.Source("Music").clip == r.Music && r.Source("Music").loop);
-        check("директор: эффекты и зацикленные игнорируют паузу слушателя, музыка нет", r.Source("Sfx 0").ignoreListenerPause && r.Source("Loop 100").ignoreListenerPause && !r.Source("Music").ignoreListenerPause);
+        check("директор: по умолчанию весь звук подчиняется паузе слушателя (музыка, эффекты, зацикленные)", !r.Source("Sfx 0").ignoreListenerPause && !r.Source("Loop 100").ignoreListenerPause && !r.Source("Music").ignoreListenerPause);
         check("директор: громкость музыки по настройкам (кривая, база 0,7)", Near(r.Source("Music").volume, (float)Math.Pow(0.5, 1.5) * 0.7f));
         var sourcesBefore = r.Director.gameObject.GetComponentsInChildren<AudioSource>().Count;
         r.Director.Initialize(r.State, r.Pause, r.Settings, r.Events);
@@ -121,15 +123,13 @@ static class AudioChecks
         r.Pause.RequestPause(PauseReason.Ad);
         check("реклама: весь звук останавливается (пауза слушателя)", AudioListener.pause);
         r.Pause.ReleasePause(PauseReason.Ad);
-        check("после рекламы идёт отсчёт: звук остаётся на паузе, пока игра не снимет Countdown", AudioListener.pause);
+        check("после рекламы звук возвращается сразу, хотя отсчёт ещё идёт", !AudioListener.pause && r.Pause.HasReason(PauseReason.Countdown));
         r.Pause.ReleasePause(PauseReason.Countdown);
-        check("отсчёт закончился: пауза слушателя снята", !AudioListener.pause);
         r.Pause.RequestPause(PauseReason.Platform);
         check("платформа: звук останавливается", AudioListener.pause);
         r.Pause.ClearAll();
-        check("после любой паузы идёт отсчёт: звук ещё на паузе (как в «Обби Потоп»)", AudioListener.pause);
+        check("пауза снята: звук продолжается, отсчёт его не держит", !AudioListener.pause);
         r.Pause.ReleasePause(PauseReason.Countdown);
-        check("отсчёт закончился: звук продолжается", !AudioListener.pause);
 
         // --- Заставка результата
         Reset();
@@ -176,13 +176,43 @@ static class AudioChecks
 
         check("эффекты: голоса по кругу, одиннадцатый звук занимает первый голос", r.Plays("click").Count == 11 && r.Plays("click")[0].source == "Sfx 0" && r.Plays("click")[10].source == "Sfx 0" && r.Plays("click")[1].source == "Sfx 1");
 
-        // Настройка: останавливать и эффекты при жёсткой паузе
+        // Жёсткая пауза и новые эффекты
         Reset();
-        var silent = new Rig(initialize: false);
-        SetField(silent.Director, typeof(AudioDirector), "silenceEffectsOnHardPause", true);
-        silent.Director.Initialize(silent.State, silent.Pause, silent.Settings, silent.Events);
-        check("настройка: эффекты и зацикленные звуки подчиняются паузе слушателя, если включено silenceEffectsOnHardPause",
-            !silent.Source("Sfx 0").ignoreListenerPause && !silent.Source("Loop 100").ignoreListenerPause && !silent.Source("Music").ignoreListenerPause);
+        r = new Rig();
+        r.State.CompleteBoot(); r.State.StartRun();
+        r.Pause.RequestPause(PauseReason.Ad);
+        Time.unscaledTime += 1f;
+        r.Director.Play((int)SampleSfx.Click);
+        check("реклама: новые эффекты во время рекламы не запускаются", r.Plays("click").Count == 0);
+        r.Pause.ReleasePause(PauseReason.Ad);
+        r.Pause.ReleasePause(PauseReason.Countdown);
+        Time.unscaledTime += 1f;
+        r.Director.Play((int)SampleSfx.Click);
+        check("после рекламы эффекты снова запускаются", r.Plays("click").Count == 1);
+        r.Pause.RequestPause(PauseReason.User);
+        Time.unscaledTime += 1f;
+        r.Director.Play((int)SampleSfx.Click);
+        check("пауза игрока: эффекты работают (звуки кнопок меню паузы)", r.Plays("click").Count == 2);
+        r.Pause.ReleasePause(PauseReason.User);
+        r.Pause.ReleasePause(PauseReason.Countdown);
+        r.Pause.RequestPause(PauseReason.Countdown);
+        Time.unscaledTime += 1f;
+        r.Director.Play((int)SampleSfx.Click);
+        check("отсчёт: эффекты работают", r.Plays("click").Count == 3);
+        r.Pause.ClearAll();
+
+        // Настройка: оставить эффекты звучать во время жёсткой паузы
+        Reset();
+        var keep = new Rig(initialize: false);
+        SetField(keep.Director, typeof(AudioDirector), "silenceEffectsOnHardPause", false);
+        keep.Director.Initialize(keep.State, keep.Pause, keep.Settings, keep.Events);
+        keep.State.CompleteBoot(); keep.State.StartRun();
+        check("настройка silenceEffectsOnHardPause=false: эффекты и зацикленные игнорируют паузу слушателя, музыка нет",
+            keep.Source("Sfx 0").ignoreListenerPause && keep.Source("Loop 100").ignoreListenerPause && !keep.Source("Music").ignoreListenerPause);
+        keep.Pause.RequestPause(PauseReason.Ad);
+        Time.unscaledTime += 1f;
+        keep.Director.Play((int)SampleSfx.Click);
+        check("настройка silenceEffectsOnHardPause=false: эффекты звучат и во время рекламы", keep.Plays("click").Count == 1);
 
         // Звук до инициализации безопасен
         var early = new Rig(initialize: false);
