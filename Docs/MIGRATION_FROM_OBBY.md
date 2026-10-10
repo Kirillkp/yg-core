@@ -12,11 +12,11 @@
 |---|---|---|---|---|
 | Core | `Scripts/Core/` (16 файлов: `AppState`, `PauseCoordinator`, `PauseReason`, `GameplayStateService`, `RealtimeDelay`, `SessionEconomyService`, `SessionGameSettingsService`, события) | около 625 строк | перенесён | Пространство имён `YgCore.Core`. Поведение сохранено, проверено `Tools/CoreChecks`. Отличия: `modules/core.md` |
 | Контракты | `Scripts/PlatformServices/Contracts/` (22 файла) | около 445 строк | перенесён | Отдельная сборка `YgCore.Contracts` без зависимости от Core. Комментарии о значении статусов сверены с реализацией на PluginYG2 |
-| Фабрики и заглушки | `Scripts/PlatformServices/*Factory.cs`, `Unavailable*` | около 400 строк | заглушки перенесены, фабрики нет | Фабрики ссылаются на Яндекс-реализацию, переносятся вместе с ней |
+| Фабрики и заглушки | `Scripts/PlatformServices/*Factory.cs`, `Unavailable*` | около 400 строк | перенесён | Локализация принимает каталог, сохранение принимает имя поля |
 | Моки | `Scripts/PlatformServices/EditorMocks/` (12 файлов) | около 490 строк | перенесён | Каталог локализации стал параметром. Общий тестовый каталог покупок вместо товаров «Обби» |
-| Яндекс-реализация | `Scripts/PlatformServices/PluginYG2/` (9 файлов: реклама, авторизация, покупки 548, сохранение 363, лидерборд, язык, готовность, жизненный цикл, рефлексия) | около 2100 строк | не начат | Самая ценная часть |
-| Заплатки PluginYG2 | `Assets/PlatformServices/PluginYG2/`: `ObbyPotopYandexSdkBridge.cs` (253), `…PaymentsBridge.cs` (151), `…StorageBridge.cs` (114), `Plugins/ObbyPotopStorage.jslib` (55), `Plugins/ObbyPotopPayments.jslib` (66), `SavesYGObbyPotop.cs` | около 640 строк | не начат | Убрать «Obby» из имён. Оформить как слой надёжности. См. DEC-009 |
-| Загрузочный экран | `ObbyLoading.jslib` (5 строк), WebGL-шаблон | малый | не начат | Образец в пакете, экран делает игра |
+| Яндекс-реализация | `Scripts/PlatformServices/PluginYG2/` (9 файлов: реклама, авторизация, покупки 548, сохранение 363, лидерборд, язык, готовность, жизненный цикл, рефлексия) | около 2100 строк | перенесён | Через рефлексию, как в «Обби». Проверен вне Unity (`Tools/YandexChecks`), в Unity и на Яндексе не проверен |
+| Заплатки PluginYG2 | `Assets/PlatformServices/PluginYG2/`: `ObbyPotopYandexSdkBridge.cs` (253), `…PaymentsBridge.cs` (151), `…StorageBridge.cs` (114), `Plugins/ObbyPotopStorage.jslib` (55), `Plugins/ObbyPotopPayments.jslib` (66), `SavesYGObbyPotop.cs` | около 640 строк | перенесён | Папка `YandexBridge` без `.asmdef`. Имена `Obby*` заменены на `YgCore*`. См. DEC-009, DEC-015, `modules/yandex.md` |
+| Загрузочный экран | `ObbyLoading.jslib` (5 строк), WebGL-шаблон | малый | перенесён частично | `YgCoreLoading.jslib` вызывает `window.YgLoading.gameReady()`, если страница его определила. Сам загрузочный экран остаётся в WebGL-шаблоне игры |
 | Сохранения и прогресс | `Scripts/Gameplay/Progression/` (`GameProgressionService` 611, `ProgressionPayloadCodec` 341, `GameProgressData`) | около 1000 строк | не начат | **Главный риск**: отделить общую рамку (версия схемы, миграции, целостность) от полей игры |
 | Магазин (логика) | `SessionStoreService`, `StoreCatalog`, `StoreItemDefinition`, `StoreRarity`, `StoreAcquisitionKind` | не измерено | не начат | Проверить привязку к скинам и брейнротам. Экраны не переносятся |
 | Аудио | `AudioDirector`, `AudioSettingsApplier`, `SfxId` | не измерено | не начат | Набор `SfxId` игровой, механизм общий |
@@ -42,9 +42,24 @@
 
 После каждого шага: обновлены модульный документ, CHANGELOG, `00-index.md` (статус модуля).
 
+## Переключение «Обби»
+
+Когда все модули перенесены, «Обби Потоп» переключается на пакет. Что для этого нужно сделать в игре (по результатам переноса Core, Контрактов, моков, заглушек, локализации и Яндекс-модуля):
+
+| Что | Действие |
+|---|---|
+| Пространства имён | `ObbyPotop.Core` → `YgCore.Core`; контракты `ObbyPotop.PlatformServices` → `YgCore.Contracts`; моки → `YgCore.Mocks`; заглушки и фабрики → `YgCore.Factories` |
+| Каталог строк | Статический `LocalizationCatalog` игры оборачивается в `DictionaryLocalizationCatalog` (тексты остаются в игре) и передаётся в `LocalizationServiceFactory` и `EditorMockLocalizationService` |
+| Мок покупок | `EditorMockPurchasesService` в игре создаётся с каталогом «Обби» (скины и наборы монет), так как общий каталог пакета другой |
+| **Сохранения игроков** | Передать в `SaveServiceFactory.Create(storageFieldName: "obbyPotopStorage")` и оставить в игре `partial SavesYG` с полем `obbyPotopStorage` (сейчас это `SavesYGObbyPotop.cs`). Иначе облачные сохранения живых игроков не найдутся |
+| Старые файлы | Удалить из игры перенесённые `Scripts/Core`, `Scripts/PlatformServices`, `Assets/PlatformServices/PluginYG2` (мосты, `.jslib`), чтобы не было двух копий |
+| Доработка PluginYG2 | В `Auth_js.js` заменить `ObbyAuthDialogClosed` на `YgCoreAuthDialogClosed` (два места) |
+| Загрузочный экран | В WebGL-шаблоне заменить `window.ObbyLoading` на `window.YgLoading` |
+| Проверка | Пройти чек-лист стенда на сборке «Обби» и playtest в черновике консоли. Особое внимание: загрузка существующего сохранения, покупка с досрочным закрытием вкладки, отмена входа |
+
 ## Открытые вопросы
 
-- **PluginYG2 компилируется в `Assembly-CSharp`**, а сборки с `.asmdef` не могут на него ссылаться напрямую. Поэтому в «Обби» Яндекс-реализация обращается к PluginYG2 через рефлексию (`PluginYG2BridgeReflection`), а мосты и `SavesYG` лежат в `Assembly-CSharp`. В пакете файлы без `.asmdef` тоже попадут в `Assembly-CSharp`, но как устроить границу `YgCore.Yandex` ↔ PluginYG2 (рефлексия, папка без asmdef или оболочка вокруг PluginYG2), решается при переносе Яндекс-модуля (DEC-015).
+- **PluginYG2 компилируется в `Assembly-CSharp`**, а сборки с `.asmdef` не могут на него ссылаться напрямую. Поэтому в «Обби» Яндекс-реализация обращается к PluginYG2 через рефлексию (`PluginYG2BridgeReflection`), а мосты и `SavesYG` лежат в `Assembly-CSharp`. В пакете файлы без `.asmdef` тоже попадут в `Assembly-CSharp`, но граница `YgCore.Yandex` ↔ PluginYG2 устроена как в «Обби»: рефлексия плюс папка `YandexBridge` без asmdef (DEC-015, предложено). **Остаётся проверить в Unity**, что такой код действительно попадает в `Assembly-CSharp`.
 
 - Где проходит граница между общей рамкой сохранения и полями игры (шаг 4).
 - Как подключать PluginYG2 (DEC-008) и как закрепить его версию.

@@ -11,6 +11,7 @@
 | Узнать, какие версии Unity, PluginYG2 и схемы сохранения поддерживаются | [compatibility.md](compatibility.md) |
 | Узнать, что изменилось в версии | [../CHANGELOG.md](../CHANGELOG.md), затем [versions/](versions/) |
 | Написать новый модульный документ | [modules/_TEMPLATE.md](modules/_TEMPLATE.md) |
+| Доработать PluginYG2 (правки его файлов) | [patches/](patches/README.md) |
 | Оформить новую версию | [versions/_TEMPLATE.md](versions/_TEMPLATE.md) и `Docs/RELEASE_PROCESS.md` в корне репозитория |
 | Выполнить типовую операцию (рекламу, товар, поле сохранения) | [recipes/](recipes/) |
 
@@ -25,9 +26,9 @@
 | Аудио | modules/audio.md | не перенесён |
 | Локализация (каталог строк) | [modules/localization.md](modules/localization.md) | частично, не выпущен |
 | Web-качество | modules/web-quality.md | не перенесён |
-| Фабрики и заглушки | [modules/factories.md](modules/factories.md) | частично (заглушки), не выпущен |
+| Фабрики и заглушки | [modules/factories.md](modules/factories.md) | перенесён, не выпущен |
 | Моки редактора | [modules/mocks.md](modules/mocks.md) | перенесён, не выпущен |
-| Яндекс-реализация и заплатки PluginYG2 | modules/yandex.md | не перенесён |
+| Яндекс-реализация и заплатки PluginYG2 | [modules/yandex.md](modules/yandex.md) | перенесён, не проверен в Unity |
 
 Файл модуля появляется вместе с переносом кода. Строка статуса обновляется в том же изменении.
 

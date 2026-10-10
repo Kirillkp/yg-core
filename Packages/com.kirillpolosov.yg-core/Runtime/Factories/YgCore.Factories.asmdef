@@ -3,7 +3,9 @@
     "rootNamespace": "YgCore.Factories",
     "references": [
         "YgCore.Contracts",
-        "YgCore.Localization"
+        "YgCore.Localization",
+        "YgCore.Mocks",
+        "YgCore.Yandex"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

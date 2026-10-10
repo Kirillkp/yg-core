@@ -81,7 +81,30 @@ else
   warn "dotnet не найден: проверки Tools/CoreChecks пропущены"
 fi
 
-# 7. Рабочее дерево чистое и такого тега ещё нет
+# 7. Яндекс-модуль: проверки без Unity, компиляция ветки WebGL и согласованность имён C# и JavaScript
+if command -v dotnet >/dev/null 2>&1; then
+  if dotnet run --project "$root/Tools/YandexChecks" -v q >/dev/null 2>&1; then
+    ok "проверки Яндекс-модуля пройдены (Tools/YandexChecks)"
+  else
+    fail "проверки Tools/YandexChecks не проходят: запустите dotnet run --project Tools/YandexChecks"
+  fi
+  if dotnet build "$root/Tools/YandexChecks" -p:WebGLCompile=true -v q >/dev/null 2>&1; then
+    ok "ветка WebGL компилируется"
+  else
+    fail "ветка WebGL не компилируется: dotnet build Tools/YandexChecks -p:WebGLCompile=true"
+  fi
+  rm -rf "$root/Tools/YandexChecks/bin" "$root/Tools/YandexChecks/obj"
+else
+  warn "dotnet не найден: проверки Tools/YandexChecks пропущены"
+fi
+
+if python3 "$root/Tools/check-jslib.py" >/dev/null 2>&1; then
+  ok "имена C# и JavaScript согласованы (Tools/check-jslib.py)"
+else
+  fail "имена C# и JavaScript не согласованы: запустите python3 Tools/check-jslib.py"
+fi
+
+# 8. Рабочее дерево чистое и такого тега ещё нет
 if git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
   if [[ -n "$(git -C "$root" status --porcelain)" ]]; then
     fail "в рабочем дереве есть незакоммиченные изменения"

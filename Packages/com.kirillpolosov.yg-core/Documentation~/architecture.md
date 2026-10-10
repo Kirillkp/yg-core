@@ -18,7 +18,8 @@ Localization ───────→ (ни от чего не зависит)
 Audio ──────────────→ Core
 Factories ──────────→ Contracts, Localization, Mocks, Yandex
 Mocks ──────────────→ Contracts, Localization
-Yandex ─────────────→ Contracts, PluginYG2, JS-заплатки
+Yandex ─────────────→ Core, Contracts, Localization; к мостам и PluginYG2 по имени (рефлексия)
+YandexBridge ───────→ PluginYG2 (напрямую, т.к. оба в Assembly-CSharp)
 
 Core, Contracts ────→ (ни от чего не зависят)
 ```
@@ -35,10 +36,15 @@ Core, Contracts ────→ (ни от чего не зависят)
 | `YgCore.Localization` | каталог строк игры и нормализация языка | ничего |
 | `YgCore.WebQuality` | настройки качества для браузера | ничего |
 | `YgCore.Mocks` | фальшивая платформа | Contracts, Localization |
-| `YgCore.Yandex` | PluginYG2 и заплатки | Contracts, Core |
+| `YgCore.Yandex` | сервисы на PluginYG2 (рефлексия) | Core, Contracts, Localization |
+| Папка `YandexBridge` (**без** `.asmdef`, `Assembly-CSharp`) | мосты к PluginYG2 и `.jslib` | PluginYG2 напрямую |
 | `YgCore.Factories` | выбор реализации, заглушки «недоступно» | Contracts, Localization, Mocks, Yandex |
 
 Список согласован с планом переноса и уточняется вместе с кодом.
+
+## Почему у Яндекс-модуля две части
+
+PluginYG2 компилируется в `Assembly-CSharp`, а сборки с `.asmdef` не могут на него ссылаться. Поэтому сервисы (`YgCore.Yandex`) находят PluginYG2 и мосты по имени типа через рефлексию, а мосты лежат в папке без `.asmdef`, которая попадает в `Assembly-CSharp` и видит PluginYG2 напрямую. Подробнее: [modules/yandex.md](modules/yandex.md).
 
 ## Жёсткие правила
 

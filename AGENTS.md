@@ -22,7 +22,7 @@
 | `Packages/com.kirillpolosov.yg-core/Documentation~/` | Документация пакета (в сборку игры не попадает) |
 | `Stand/` | Unity-проект тестового стенда, подключает пакет локально |
 | `Docs/` | Процесс: выпуск версий, чек-лист стенда, решения, план переноса из «Обби» |
-| `Tools/` | `check-release.sh` (проверка выпуска), `generate-meta.py` (файлы .meta), `CoreChecks/` (проверки логики без Unity) |
+| `Tools/` | `check-release.sh` (проверка выпуска), `generate-meta.py` (файлы .meta), `check-jslib.py` (имена C# и JavaScript), `CoreChecks/` и `YandexChecks/` (проверки без Unity) |
 
 ## Обязательные правила
 
@@ -35,7 +35,7 @@
 7. **Версионирование по SemVer.** `PATCH` исправление, `MINOR` новая возможность без поломок, `MAJOR` ломающее изменение (обязательна инструкция по переносу для игр).
 8. **Тег версии ставится только после чек-листа стенда на Яндексе** и успешного `Tools/check-release.sh`.
 9. **Не запускайте Unity, сборки и тесты без явной просьбы пользователя.**
-10. **Новые файлы в пакете получают `.meta`**: после добавления файлов выполните `python3 Tools/generate-meta.py`, иначе Unity проигнорирует пакет, подключённый из git. Логику, которую можно проверить без Unity, проверяйте в `Tools/CoreChecks` (`dotnet run --project Tools/CoreChecks`).
+10. **Новые файлы в пакете получают `.meta`**: после добавления файлов выполните `python3 Tools/generate-meta.py`, иначе Unity проигнорирует пакет, подключённый из git. Логику, которую можно проверить без Unity, проверяйте в `Tools/CoreChecks` (`dotnet run --project Tools/CoreChecks`), Яндекс-модуль в `Tools/YandexChecks`. Меняя имена в `.jslib` или в C#, запускайте `python3 Tools/check-jslib.py`.
 11. **Не коммитьте** `Library`, `Temp`, `Build`, `Builds`, `Logs`, `UserSettings` и другие сгенерированные папки Unity.
 12. **Решения фиксируются** в `Docs/DECISIONS.md`. Не пересматривайте принятое без явной просьбы.
 

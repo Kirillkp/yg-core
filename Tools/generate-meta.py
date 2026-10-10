@@ -67,6 +67,41 @@ TextScriptImporter:
   assetBundleVariant:
 """
 
+# JavaScript-плагин для WebGL (.jslib): включён только для WebGL, в редакторе и других платформах выключен.
+JSLIB_IMPORTER = """fileFormatVersion: 2
+guid: {guid}
+PluginImporter:
+  externalObjects: {{}}
+  serializedVersion: 2
+  iconMap: {{}}
+  executionOrder: {{}}
+  defineConstraints: []
+  isPreloaded: 0
+  isOverridable: 0
+  isExplicitlyReferenced: 0
+  validateReferences: 1
+  platformData:
+  - first:
+      Any: 
+    second:
+      enabled: 0
+      settings: {{}}
+  - first:
+      Editor: Editor
+    second:
+      enabled: 0
+      settings:
+        DefaultValueInitialized: true
+  - first:
+      WebGL: WebGL
+    second:
+      enabled: 1
+      settings: {{}}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+"""
+
 DEFAULT_IMPORTER = """fileFormatVersion: 2
 guid: {guid}
 DefaultImporter:
@@ -92,6 +127,8 @@ def template_for(path, is_dir):
         return MONO_IMPORTER
     if ext == ".asmdef":
         return ASMDEF_IMPORTER
+    if ext == ".jslib":
+        return JSLIB_IMPORTER
     if ext in (".md", ".txt", ".json", ".xml", ".yaml", ".yml"):
         return TEXT_IMPORTER
     return DEFAULT_IMPORTER
