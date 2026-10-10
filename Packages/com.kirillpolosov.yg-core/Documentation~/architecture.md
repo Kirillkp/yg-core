@@ -19,7 +19,7 @@ Audio ──────────────→ Core   (Audio.UI необя�
 Factories ──────────→ Contracts, Localization, Mocks, Yandex
 Mocks ──────────────→ Contracts, Localization
 Yandex ─────────────→ Core, Contracts, Localization; к мостам и PluginYG2 по имени (рефлексия)
-YandexBridge ───────→ PluginYG2 (напрямую, т.к. оба в Assembly-CSharp)
+YandexBridge ───────→ PluginYG2 (напрямую: установщик копирует мосты в Assets игры, где они в Assembly-CSharp рядом с PluginYG2)
 
 Core, Contracts ────→ (ни от чего не зависят)
 ```
@@ -39,7 +39,7 @@ Core, Contracts ────→ (ни от чего не зависят)
 | `YgCore.Localization.UI` (необязательная) | подстановка строк в uGUI `Text` | Contracts, uGUI |
 | `YgCore.Mocks` | фальшивая платформа | Contracts, Localization |
 | `YgCore.Yandex` | сервисы на PluginYG2 (рефлексия) | Core, Contracts, Localization |
-| Папка `YandexBridge` (**без** `.asmdef`, `Assembly-CSharp`) | мосты к PluginYG2 и `.jslib` | PluginYG2 напрямую |
+| Папка `YandexBridge~` пакета, копируется установщиком в `Assets/YgCore/YandexBridge` игры (`Assembly-CSharp`) | мосты к PluginYG2 и `.jslib` | PluginYG2 напрямую |
 | `YgCore.Factories` | выбор реализации, заглушки «недоступно» | Contracts, Localization, Mocks, Yandex |
 
 Список согласован с планом переноса и уточняется вместе с кодом.

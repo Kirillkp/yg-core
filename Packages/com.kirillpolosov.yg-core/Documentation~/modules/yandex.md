@@ -1,6 +1,6 @@
 # Модуль: Яндекс-реализация (PluginYG2)
 
-Сборка: `YgCore.Yandex` + папка без `.asmdef` `Runtime/YandexBridge` (попадает в `Assembly-CSharp`) · Пространства имён: `YgCore.Yandex`, `YgCore.YandexBridge` · С версии: `v0.1.0` (пока в разделе Unreleased) · Статус: перенесён из «Обби Потоп», **не проверен в Unity и на Яндексе** (проверен только вне Unity, см. «Как проверить»)
+Сборка: `YgCore.Yandex` + мосты из папки `Runtime/YandexBridge~`, которые установщик (`YgCore.Editor`) копирует в `Assets/YgCore/YandexBridge` игры, в `Assembly-CSharp` · Пространства имён: `YgCore.Yandex`, `YgCore.YandexBridge` · С версии: `v0.1.0` (пока в разделе Unreleased) · Статус: перенесён из «Обби Потоп», **не проверен в Unity и на Яндексе** (проверен только вне Unity, см. «Как проверить»)
 
 Зависит от `YgCore.Core`, `YgCore.Contracts`, `YgCore.Localization`. Работает с PluginYG2 v2.0092 (см. [compatibility.md](../compatibility.md)).
 
@@ -15,22 +15,22 @@
                                           │ рефлексия (по имени типа)
                                           ▼
                                      мосты YgSdkBridge, YgPaymentsBridge, YgStorageBridge,
-                                     расширение SavesYG                 (YandexBridge, БЕЗ .asmdef, Assembly-CSharp)
+                                     расширение SavesYG                 (YandexBridge, в Assets игры, Assembly-CSharp)
                                           │ прямые вызовы YG2
                                           ▼
                                      PluginYG2 (Assembly-CSharp) ──→ JS ──→ SDK Яндекс Игр
                                      + YgCore*.jslib (подтверждения покупок и хранилища)
 ```
 
-### Почему рефлексия и папка без `.asmdef`
+### Почему рефлексия и установка мостов в проект игры
 
 PluginYG2 компилируется в `Assembly-CSharp`. Сборки с `.asmdef` (как `YgCore.Yandex`) не могут ссылаться на `Assembly-CSharp`. Поэтому:
 
 - сервисы находят `YG.YG2` и мосты по имени типа среди загруженных сборок;
-- мосты лежат в папке без `.asmdef`: такой код пакета компилируется в `Assembly-CSharp` и видит PluginYG2 напрямую;
+- мосты должны компилироваться в `Assembly-CSharp`, чтобы видеть PluginYG2 напрямую. Но скрипты пакета без `.asmdef` Unity в сборки игры **не берёт** (проверено на стенде: код из папки пакета без `.asmdef` в `Assembly-CSharp` не попадает). Поэтому исходники мостов лежат в пакете в папке `Runtime/YandexBridge~` (тильда: Unity её не импортирует), а редакторный установщик `YgCore.Editor.YandexBridgeInstaller` копирует их вместе с `.jslib` в `Assets/YgCore/YandexBridge` игры. Копия обновляется сама при смене версии пакета или содержимого мостов; пункт меню «YgCore → Переустановить мосты Яндекса» делает это вручную. **Закоммитьте `Assets/YgCore/YandexBridge` в репозиторий игры.**
 - каждый файл моста обёрнут в `#if PLUGIN_YG_2` (символ, который ставит сам PluginYG2), чтобы пакет не ломал проект без плагина, и в условие нужного модуля плагина (`Payments_yg`, `Storage_yg`).
 
-> **Проверить в Unity при первой сборке стенда:** что код пакета без `.asmdef` действительно попадает в `Assembly-CSharp`. Сейчас это следует из документации Unity и устройства «Обби», но в Unity не проверялось.
+> **История.** Первая версия пакета рассчитывала, что папка без `.asmdef` попадёт в `Assembly-CSharp` (DEC-015). Первая сборка стенда это опровергла: все сервисы Яндекса были недоступны, а загрузочный экран бесконечно ждал сигнала готовности. Исправлено установщиком (DEC-022).
 
 ## Сервисы
 
@@ -115,7 +115,8 @@ var save = SaveServiceFactory.Create(storageFieldName: "obbyPotopStorage");
 - Вызывать `YG.YG2` и мосты из игрового кода: только через контракты.
 - Менять имя поля сохранения после выпуска игры.
 - Убирать `#if PLUGIN_YG_2` из мостов: проект без плагина перестанет собираться.
-- Класть `.asmdef` в папку `YandexBridge`: мосты перестанут видеть PluginYG2.
+- Класть `.asmdef` в `Assets/YgCore/YandexBridge`: мосты перестанут видеть PluginYG2.
+- Править файлы в `Assets/YgCore/YandexBridge` руками: установщик перезапишет их при обновлении пакета.
 - Вызывать `ConsumeAsync` до выдачи и сохранения награды.
 
 ## Как проверить

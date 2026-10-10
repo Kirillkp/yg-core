@@ -12,6 +12,7 @@ Unity-проект стенда: экран с кнопками и журнал�
 
 - `Assets/PluginYourGames/` — PluginYG2 v2.0092 (лицензия CC0), скопирован из «Обби Потоп». Единственная доработка: сообщение о закрытии окна входа `YgCoreAuthDialogClosed` (см. `Documentation~/patches/pluginyg2-auth-dialog-closed.md`).
 - `Assets/WebGLTemplates/YandexGames/` — нейтральный шаблон страницы: объекты `window.YgLoading` и `window.YgWebQuality`, которые ждёт пакет.
+- `Assets/YgCore/YandexBridge/` — мосты к PluginYG2, их копирует из пакета установщик при открытии проекта (меню «YgCore → Переустановить мосты Яндекса»). Коммитится вместе со стендом.
 - `Assets/link.xml` — защита PluginYG2 от обрезки кода (сервисы пакета обращаются к нему по имени).
 - `Assets/Stand/Scripts/` — сам стенд: `StandApp` (вызовы контрактов), `StandBootstrap` (экран на UI Toolkit), `StandLog` (журнал OK/FAIL), `StandAudio` (настоящий `AudioDirector` с сгенерированными звуками).
 - `Assets/Stand/Scripts/Editor/StandBuild.cs` — меню «YgCore Stand»: подготовка и сборка WebGL.
