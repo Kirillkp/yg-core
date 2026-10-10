@@ -51,6 +51,16 @@ namespace YgCoreStand
             app.Initialize();
             StandLog.Info("Версия пакета: " + StandVersion.Read());
             app.ReportAvailability();
+
+            // Как и игра: сообщаем платформе о готовности сами при старте. Пока этого нет, страница держит загрузочный экран
+            // («Запускаем игру… 99%»), а кнопка «Готовность» под ним недоступна.
+            _ = SendReadyAsync();
+        }
+
+        private static async Task SendReadyAsync()
+        {
+            try { await app.MarkReadyAsync(); }
+            catch (Exception e) { StandLog.Fail("Исключение при сообщении о готовности: " + e.Message); }
         }
 
         private static void BuildScreen(VisualElement root)
