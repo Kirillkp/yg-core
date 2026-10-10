@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Проверяет, что образцы кода в документации модулей совпадают с реальными файлами, которые компилируются и проверяются.
 
-Каждый образец лежит в Tools/CoreChecks/ (SampleSave.cs, SampleStore.cs), а в документации модуля приведена его копия.
+Каждый образец лежит в Tools/CoreChecks/ (SampleSave.cs, SampleStore.cs, SampleAudio.cs), а в документации модуля приведена его копия.
 Если изменить только один из двух, образец в документации перестанет быть рабочим. Скрипт ловит такое расхождение.
 
 Использование: python3 Tools/check-samples.py   (код выхода 1 при расхождении)
@@ -17,6 +17,7 @@ MODULES = os.path.join(ROOT, "Packages", "com.kirillpolosov.yg-core", "Documenta
 PAIRS = [
     (os.path.join(ROOT, "Tools", "CoreChecks", "SampleSave.cs"), os.path.join(MODULES, "save.md")),
     (os.path.join(ROOT, "Tools", "CoreChecks", "SampleStore.cs"), os.path.join(MODULES, "store.md")),
+    (os.path.join(ROOT, "Tools", "CoreChecks", "SampleAudio.cs"), os.path.join(MODULES, "audio.md")),
 ]
 
 

@@ -1,0 +1,32 @@
+{
+    "name": "YgCore.Audio.UI",
+    "rootNamespace": "YgCore.Audio.UI",
+    "references": [
+        "YgCore.Audio",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "YGCORE_UGUI",
+        "YGCORE_INPUT_SYSTEM"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.ugui",
+            "expression": "",
+            "define": "YGCORE_UGUI"
+        },
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "YGCORE_INPUT_SYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

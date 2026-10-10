@@ -15,7 +15,7 @@
 
 Save, Store → Core, Contracts   (Save: прогресс игры подключается через схему и связь, которые пишет игра)
 Localization ───────→ (ни от чего не зависит)
-Audio ──────────────→ Core
+Audio ──────────────→ Core   (Audio.UI необязательная: только если в проекте есть uGUI и Input System)
 Factories ──────────→ Contracts, Localization, Mocks, Yandex
 Mocks ──────────────→ Contracts, Localization
 Yandex ─────────────→ Core, Contracts, Localization; к мостам и PluginYG2 по имени (рефлексия)
@@ -33,6 +33,7 @@ Core, Contracts ────→ (ни от чего не зависят)
 | `YgCore.Save` | схема, миграции, кодек сохранения | Core, Contracts |
 | `YgCore.Store` | каталог и покупки | Core, Contracts |
 | `YgCore.Audio` | музыка и звуки | Core |
+| `YgCore.Audio.UI` (необязательная) | звук нажатия на uGUI | Audio, uGUI, Input System |
 | `YgCore.Localization` | каталог строк игры и нормализация языка | ничего |
 | `YgCore.WebQuality` | настройки качества для браузера | ничего |
 | `YgCore.Mocks` | фальшивая платформа | Contracts, Localization |

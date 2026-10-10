@@ -23,7 +23,7 @@
 | Контракты платформы | [modules/contracts.md](modules/contracts.md) | перенесён, не выпущен |
 | Сохранения и прогресс | [modules/save.md](modules/save.md) | перенесён, не выпущен |
 | Магазин (логика) | [modules/store.md](modules/store.md) | перенесён, не выпущен |
-| Аудио | modules/audio.md | не перенесён |
+| Аудио | [modules/audio.md](modules/audio.md) | перенесён, не выпущен |
 | Локализация (каталог строк) | [modules/localization.md](modules/localization.md) | частично, не выпущен |
 | Web-качество | modules/web-quality.md | не перенесён |
 | Фабрики и заглушки | [modules/factories.md](modules/factories.md) | перенесён, не выпущен |

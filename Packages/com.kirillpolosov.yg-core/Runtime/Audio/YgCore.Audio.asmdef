@@ -1,0 +1,16 @@
+{
+    "name": "YgCore.Audio",
+    "rootNamespace": "YgCore.Audio",
+    "references": [
+        "YgCore.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

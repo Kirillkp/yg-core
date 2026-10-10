@@ -144,6 +144,9 @@ static class P
         // Модуль Store: покупки, экипировка, выдача в два шага.
         StoreChecks.Run(Check);
 
+        // Модуль Audio: правила звука и директор на заглушках Unity.
+        AudioChecks.Run(Check);
+
         Console.WriteLine(fails == 0 ? "\nВсе проверки пройдены." : $"\nПровалено: {fails}");
         return fails == 0 ? 0 : 1;
     }
