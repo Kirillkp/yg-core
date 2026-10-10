@@ -138,6 +138,9 @@ static class P
         var locStub = new UnavailableLocalizationService(catalog);
         Check("заглушка языка: по умолчанию, строки работают", locStub.CurrentLanguage == "en" && locStub.Get("hello", "W") == "Hello W");
 
+        // Модуль Save: политики защиты прогресса.
+        SaveChecks.Run(Check);
+
         Console.WriteLine(fails == 0 ? "\nВсе проверки пройдены." : $"\nПровалено: {fails}");
         return fails == 0 ? 0 : 1;
     }

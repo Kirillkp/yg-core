@@ -1,0 +1,17 @@
+{
+    "name": "YgCore.Save",
+    "rootNamespace": "YgCore.Save",
+    "references": [
+        "YgCore.Core",
+        "YgCore.Contracts"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

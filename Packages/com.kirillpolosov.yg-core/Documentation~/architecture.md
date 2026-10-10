@@ -13,7 +13,7 @@
 Сборка игры (старт) ─→ Factories, Core
 Стенд ──────────────→ Factories, Save, Store, Audio, Localization, Core, WebQuality
 
-Save, Store → Core, Contracts
+Save, Store → Core, Contracts   (Save: прогресс игры подключается через схему и связь, которые пишет игра)
 Localization ───────→ (ни от чего не зависит)
 Audio ──────────────→ Core
 Factories ──────────→ Contracts, Localization, Mocks, Yandex

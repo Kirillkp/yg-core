@@ -16,6 +16,11 @@ namespace UnityEngine
         public static int Max(int a, int b) => a > b ? a : b;
     }
 
+    public static class Debug
+    {
+        public static void LogWarning(object message) { }
+    }
+
     public static class Time
     {
         public static double realtimeSinceStartupAsDouble => Environment.TickCount64 / 1000.0;

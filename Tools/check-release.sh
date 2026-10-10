@@ -104,6 +104,12 @@ else
   fail "имена C# и JavaScript не согласованы: запустите python3 Tools/check-jslib.py"
 fi
 
+if python3 "$root/Tools/check-samples.py" >/dev/null 2>&1; then
+  ok "образец в документации совпадает с проверяемым (Tools/check-samples.py)"
+else
+  fail "образец в документации не совпадает с Tools/CoreChecks/SampleSave.cs: запустите python3 Tools/check-samples.py"
+fi
+
 # 8. Рабочее дерево чистое и такого тега ещё нет
 if git -C "$root" rev-parse --git-dir >/dev/null 2>&1; then
   if [[ -n "$(git -C "$root" status --porcelain)" ]]; then

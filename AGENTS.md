@@ -22,7 +22,7 @@
 | `Packages/com.kirillpolosov.yg-core/Documentation~/` | Документация пакета (в сборку игры не попадает) |
 | `Stand/` | Unity-проект тестового стенда, подключает пакет локально |
 | `Docs/` | Процесс: выпуск версий, чек-лист стенда, решения, план переноса из «Обби» |
-| `Tools/` | `check-release.sh` (проверка выпуска), `generate-meta.py` (файлы .meta), `check-jslib.py` (имена C# и JavaScript), `CoreChecks/` и `YandexChecks/` (проверки без Unity) |
+| `Tools/` | `check-release.sh` (проверка выпуска), `generate-meta.py` (файлы .meta), `check-jslib.py` (имена C# и JavaScript), `check-samples.py` (образец кода в документации), `CoreChecks/` и `YandexChecks/` (проверки без Unity) |
 
 ## Обязательные правила
 
