@@ -7,6 +7,7 @@
 | Версия пакета | Unity | PluginYG2 | Модули PluginYG2 | Схема сохранения | Статус |
 |---|---|---|---|---|---|
 | 0.0.0 | не определено | не определено | не определены | нет | скелет, кода нет |
+| 0.1.1 | 6000.6.0f1 (пакет собран и проверен на стенде на Яндексе, 2026-10-10) | v2.0092 (Storage v1.021, Payments v1.02) | Authorization, Storage, Leaderboards, InterstitialAdv, RewardedAdv, Payments, Localization | определяет игра (конверт v1: `format`, `schemaVersion`, `revision`) | выпущена, код как в 0.1.0 |
 | 0.1.0 | 6000.6.0f1 (пакет собран и проверен на стенде на Яндексе, 2026-10-10) | v2.0092 (Storage v1.021, Payments v1.02) | Authorization, Storage, Leaderboards, InterstitialAdv, RewardedAdv, Payments, Localization | определяет игра (конверт v1: `format`, `schemaVersion`, `revision`) | выпущена, проверена на стенде |
 
 Для ориентира, на чём работает «Обби Потоп» сейчас (из которого переносится код): Unity 6000.6.0f1, PluginYG2 v2.0092 (Storage v1.021, Payments v1.02), URP 17.6.0, Input System 1.20.0, uGUI 2.6.0.
