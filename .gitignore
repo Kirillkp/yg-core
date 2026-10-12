@@ -53,3 +53,7 @@ Tools/**/obj/
 /yg-core.slnx
 /Packages/manifest.json
 /Packages/packages-lock.json
+
+# Папки пакета с «~» Unity не импортирует, но их содержимое нужно в репозитории (глобальный gitignore с правилом *~ их скрывает).
+!Packages/com.kirillpolosov.yg-core/Runtime/YandexBridge~/
+!Packages/com.kirillpolosov.yg-core/Runtime/YandexBridge~/**
