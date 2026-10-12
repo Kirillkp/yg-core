@@ -40,6 +40,29 @@ catalog.NormalizeLanguage("ru-RU");        // "ru"
 catalog.Get("ru", "unit.meters", 120);     // "120 м"
 ```
 
+## Несколько каталогов в одном сервисе (`CompositeLocalizationCatalog`, с v0.2.0)
+
+Сервисы локализации принимают ровно один `ILocalizationCatalog`. Если строки лежат в разных местах (например, строки оболочки шаблона и строки игры), соберите их в составной каталог:
+
+```csharp
+using YgCore.Localization;
+
+// Порядок это приоритет: первый каталог главный. Игра ставится первой и может переопределить строку оболочки.
+ILocalizationCatalog catalog = new CompositeLocalizationCatalog(gameCatalog, shellCatalog);
+
+var localization = LocalizationServiceFactory.Create(catalog);
+```
+
+Правила:
+
+1. Одинаковый ключ берётся из каталога, который стоит раньше.
+2. Строка ищется сначала на нужном языке во **всех** каталогах и только потом на языке по умолчанию. Английский запасной вариант каталога игры не перебивает русскую строку каталога оболочки.
+3. У всех каталогов должен быть один язык по умолчанию, иначе `ArgumentException` при создании. Пустой список и `null` вместо каталога тоже отклоняются.
+4. Язык поддерживается, если его знает хотя бы один каталог (`NormalizeLanguage`).
+5. Ключа нет нигде: возвращается сам ключ. Пустой ключ: пустая строка.
+
+Точный поиск «строка есть именно на этом языке» работает для каталогов с интерфейсом `ILocalizationCatalogLookup` (его реализует `DictionaryLocalizationCatalog`). Свой каталог можно использовать и без него: тогда запасной вариант такого каталога считается найденной строкой (правило 2 выполняется приближённо), поэтому для своих каталогов лучше реализовать `ILocalizationCatalogLookup.TryGetTemplate`. Составной каталог можно вкладывать в другой составной.
+
 ## Подстановка строк в надписи (uGUI)
 
 Если в проекте есть uGUI, сборка `YgCore.Localization.UI` даёт компонент `LocalizedTextView`: он ставит в uGUI `Text` строку по ключу и сам обновляет её при смене языка.
@@ -65,6 +88,8 @@ LocalizedTextView.InitializeChildren(this, localizationService);
 | `ILocalizationCatalog.NormalizeLanguage(language)` | Приводит код языка к поддерживаемому | Берёт часть до `-` или `_`, переводит в нижний регистр. Неизвестный и пустой дают язык по умолчанию |
 | `ILocalizationCatalog.Get(language, key, args)` | Строка по ключу | Нет ключа на языке: берётся язык по умолчанию. Нет и там: возвращается сам ключ. Пустой ключ: пустая строка. Аргументы подставляются как в `string.Format` (культура инвариантная) |
 | `DictionaryLocalizationCatalog(defaultLanguage, tables)` | Каталог на словарях | Бросает `ArgumentException`, если для языка по умолчанию нет таблицы |
+| `ILocalizationCatalogLookup.TryGetTemplate(language, key, out template)` | Строгий поиск шаблона на одном языке, без запасного (с `v0.2.0`) | Нужен составному каталогу; `DictionaryLocalizationCatalog` реализует |
+| `CompositeLocalizationCatalog(params ILocalizationCatalog[])` | Несколько каталогов как один (с `v0.2.0`) | Правила выше. Бросает `ArgumentException` при пустом списке, `null` и разных языках по умолчанию |
 | `LocalizedTextView.Initialize(service)`, `InitializeChildren(root, service)` | Строки в uGUI `Text` (сборка `YgCore.Localization.UI`) | Обновляется при смене языка |
 
 ## События и ошибки
@@ -74,6 +99,7 @@ LocalizedTextView.InitializeChildren(this, localizationService);
 | Ключа нет нигде | Возвращается ключ. На экране виден пропуск, игра не падает |
 | Число аргументов не совпадает с форматом строки | `FormatException` из `string.Format`: проверяйте строки |
 | `DictionaryLocalizationCatalog` создан без таблицы для языка по умолчанию | `ArgumentException` при создании |
+| `CompositeLocalizationCatalog` создан с пустым списком, `null` или каталогами с разными языками по умолчанию | `ArgumentException` при создании |
 
 ## Чего делать нельзя
 
@@ -82,7 +108,7 @@ LocalizedTextView.InitializeChildren(this, localizationService);
 
 ## Как проверить
 
-Без Unity: `dotnet run --project Tools/CoreChecks` (нормализация, запасной язык, аргументы, ошибки; для `LocalizedTextView` подстановка, обновление при смене языка, переподключение, снятие подписок). На стенде (секция «Язык»). **Не проверено в Unity:** сам компонент на настоящем uGUI и включение необязательной сборки по `versionDefines`.
+Без Unity: `dotnet run --project Tools/CoreChecks` (нормализация, запасной язык, аргументы, ошибки; составной каталог: строки обоих каталогов, приоритет, запасной язык поверх каталогов, три языка, чужой каталог без строгого поиска, ошибки конструктора, работа через мок и заглушку языка; `PluginYG2LocalizationService` с составным каталогом: `Tools/YandexChecks`; для `LocalizedTextView` подстановка, обновление при смене языка, переподключение, снятие подписок). На стенде (секция «Язык»; самопроверка «Составной каталог строк» на живом сервисе платформы). **Не проверено в Unity:** сам компонент на настоящем uGUI и включение необязательной сборки по `versionDefines`.
 
 ## Отличия от «Обби Потоп»
 

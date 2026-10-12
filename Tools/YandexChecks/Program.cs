@@ -36,6 +36,7 @@ static class P
         ReadinessAndLifecycle();
         LocalizationChecks();
         SaveAndPurchases();
+        PlatformFeatures();
         FactoriesChecks();
 
         Console.WriteLine(fails == 0 ? "\nВсе проверки пройдены." : $"\nПровалено: {fails}");
@@ -228,6 +229,132 @@ static class P
             Check("язык: событие платформы нормализуется", loc.CurrentLanguage == "ru" && changes == 2);
             Check("язык: определение языка -> Success", loc.DetectLanguageAsync().Result.IsSuccess);
         }
+
+        // Составной каталог (строки оболочки и игры) в настоящем сервисе локализации Яндекса.
+        var shell = new DictionaryLocalizationCatalog("en", new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["en"] = new Dictionary<string, string> { ["shell.menu"] = "Menu" },
+            ["ru"] = new Dictionary<string, string> { ["shell.menu"] = "Меню" },
+        });
+        YG2.lang = "ru";
+        using (var loc = new PluginYG2LocalizationService(new CompositeLocalizationCatalog(Catalog(), shell)))
+        {
+            Check("язык: составной каталог в сервисе Яндекса (строки игры и оболочки)",
+                loc.CurrentLanguage == "ru" && loc.Get("hello") == "Привет" && loc.Get("shell.menu") == "Меню");
+            loc.SetLanguage("en");
+            Check("язык: составной каталог, переключение языка", loc.Get("hello") == "Hello" && loc.Get("shell.menu") == "Menu");
+        }
+    }
+
+    // Ответ JS-стороны возможностей платформы (то, что пришло бы из YgCorePlatformFeatures.jslib).
+    static string FeatureReply(string id, string fields) => "{\"id\":\"" + id + "\"," + fields + "}";
+
+    // Подготовка: SDK готов, все возможности «есть», ответы выдаёт сценарий.
+    static void FeaturesReady(Func<string, string> scenario)
+    {
+        Ready();
+        YgPlatformFeaturesBridge.EditorSupportOverride = feature => true;
+        YgPlatformFeaturesBridge.EditorRequestHandler = (id, feature) =>
+        {
+            var fields = scenario(feature);
+            if (fields != null) YgPlatformFeaturesBridge.Complete(FeatureReply(id, fields));
+        };
+    }
+
+    static void PlatformFeatures()
+    {
+        // SDK готов, но у него нет этих функций: сервисы недоступны, результат Unavailable.
+        Ready();
+        YgPlatformFeaturesBridge.EditorSupportOverride = null;
+        YgPlatformFeaturesBridge.EditorRequestHandler = null;
+        var review = new PluginYG2ReviewService();
+        var shortcut = new PluginYG2ShortcutService();
+        var clock = new PluginYG2ServerClock();
+        Check("возможности: у SDK нет функций -> сервисы недоступны",
+            !review.IsPlatformAvailable && !shortcut.IsPlatformAvailable && !clock.IsPlatformAvailable);
+        Check("возможности: нет функций -> Unavailable без обращения к SDK",
+            review.CanReviewAsync().Result.Status == PlatformServiceStatus.PlatformUnavailable
+            && shortcut.CanShowPromptAsync().Result.Status == PlatformServiceStatus.PlatformUnavailable
+            && clock.GetUtcNowAsync().Result.Status == PlatformServiceStatus.PlatformUnavailable);
+
+        // Оценка игры.
+        FeaturesReady(feature =>
+            feature == "canReview" ? "\"ok\":true,\"supported\":true,\"flag\":true,\"reason\":\"\"" :
+            feature == "requestReview" ? "\"ok\":true,\"supported\":true,\"flag\":true" : null);
+        Check("оценка: сервис доступен при поддержке SDK", review.IsPlatformAvailable);
+        var canReview = review.CanReviewAsync().Result;
+        Check("оценка: CanReview -> Success(true)", canReview.IsSuccess && canReview.Value);
+        var requested = review.RequestReviewAsync().Result;
+        Check("оценка: игрок оценил (feedbackSent) -> Success(true)", requested.IsSuccess && requested.Value);
+
+        FeaturesReady(feature => feature == "canReview"
+            ? "\"ok\":true,\"supported\":true,\"flag\":false,\"reason\":\"NO_AUTH\""
+            : "\"ok\":true,\"supported\":true,\"flag\":false");
+        var denied = review.CanReviewAsync().Result;
+        Check("оценка: нельзя (NO_AUTH) -> Success(false) с причиной", denied.IsSuccess && !denied.Value && denied.Message == "NO_AUTH");
+        var closed = review.RequestReviewAsync().Result;
+        Check("оценка: окно закрыто без оценки -> Success(false)", closed.IsSuccess && !closed.Value);
+
+        FeaturesReady(feature => "\"ok\":false,\"supported\":true,\"error\":\"use canReview before requestReview\"");
+        var failed = review.RequestReviewAsync().Result;
+        Check("оценка: ошибка SDK -> Error с текстом", failed.Status == PlatformServiceStatus.Error && failed.Message.Contains("canReview"));
+
+        FeaturesReady(feature => "\"ok\":false,\"supported\":false,\"error\":\"нет\"");
+        Check("оценка: SDK ответил «не поддерживается» -> Unavailable", review.CanReviewAsync().Result.Status == PlatformServiceStatus.PlatformUnavailable);
+
+        // Второе окно поверх первого не открывается.
+        string pendingId = null;
+        Ready();
+        YgPlatformFeaturesBridge.EditorSupportOverride = feature => true;
+        YgPlatformFeaturesBridge.EditorRequestHandler = (id, feature) => pendingId = id;
+        var first = review.RequestReviewAsync();
+        Check("оценка: пока окно открыто, второй запрос -> Denied", review.RequestReviewAsync().Result.Status == PlatformServiceStatus.Denied && pendingId != null);
+        YgPlatformFeaturesBridge.Complete(FeatureReply("чужой-id", "\"ok\":true,\"supported\":true,\"flag\":true"));
+        Check("оценка: ответ с чужим идентификатором ничего не завершает", !first.IsCompleted);
+        YgPlatformFeaturesBridge.Complete("не json");
+        YgPlatformFeaturesBridge.Complete(FeatureReply(pendingId, "\"ok\":true,\"supported\":true,\"flag\":true"));
+        Check("оценка: ответ со своим идентификатором завершает запрос, окно снова доступно",
+            first.Wait(2000) && first.Result.Value);
+        YgPlatformFeaturesBridge.EditorRequestHandler = null;
+
+        // Ярлык.
+        FeaturesReady(feature =>
+            feature == "canShowPrompt" ? "\"ok\":true,\"supported\":true,\"flag\":true" :
+            feature == "showPrompt" ? "\"ok\":true,\"supported\":true,\"flag\":true" : null);
+        Check("ярлык: сервис доступен при поддержке SDK", shortcut.IsPlatformAvailable);
+        Check("ярлык: canShow -> Success(true)", shortcut.CanShowPromptAsync().Result is var canShow && canShow.IsSuccess && canShow.Value);
+        Check("ярлык: outcome accepted -> Success(true)", shortcut.ShowPromptAsync().Result is var accepted && accepted.IsSuccess && accepted.Value);
+        FeaturesReady(feature => "\"ok\":true,\"supported\":true,\"flag\":false");
+        Check("ярлык: отказ игрока -> Success(false)", shortcut.ShowPromptAsync().Result is var rejected && rejected.IsSuccess && !rejected.Value);
+
+        // Серверное время.
+        const long serverMs = 1760227200000L;
+        FeaturesReady(feature => "\"ok\":true,\"supported\":true,\"number\":" + serverMs);
+        Check("время: сервис доступен при поддержке SDK", clock.IsPlatformAvailable);
+        var now = clock.GetUtcNowAsync().Result;
+        Check("время: миллисекунды Unix -> DateTime в UTC",
+            now.IsSuccess && now.Value.Kind == DateTimeKind.Utc && now.Value == DateTimeOffset.FromUnixTimeMilliseconds(serverMs).UtcDateTime);
+        FeaturesReady(feature => "\"ok\":true,\"supported\":true,\"number\":0");
+        Check("время: нулевое значение -> Error, не случайная дата", clock.GetUtcNowAsync().Result.Status == PlatformServiceStatus.Error);
+        FeaturesReady(feature => "\"ok\":false,\"supported\":true,\"error\":\"сбой\"");
+        Check("время: сбой SDK -> Error", clock.GetUtcNowAsync().Result.Status == PlatformServiceStatus.Error);
+
+        // SDK не готов: даже при наличии функций сервисы недоступны.
+        YG2.ResetValues();
+        YgPlatformFeaturesBridge.EditorSupportOverride = feature => true;
+        Check("возможности: SDK не готов -> сервисы недоступны", !review.IsPlatformAvailable && !shortcut.IsPlatformAvailable && !clock.IsPlatformAvailable);
+
+        // Таймаут моста: ответа нет, запрос не висит вечно и не оставляет записи в очереди.
+        Ready();
+        YgPlatformFeaturesBridge.EditorRequestHandler = (id, feature) => { };
+        var timedOut = false;
+        try { YgPlatformFeaturesBridge.CallAsync("serverTime", 1).Wait(5000); }
+        catch (AggregateException e) { timedOut = e.InnerException is TimeoutException; }
+        Check("возможности: нет ответа -> TimeoutException через заданное время", timedOut);
+
+        YgPlatformFeaturesBridge.EditorSupportOverride = null;
+        YgPlatformFeaturesBridge.EditorRequestHandler = null;
+        Ready();
     }
 
     static void SaveAndPurchases()
@@ -279,6 +406,9 @@ static class P
             && GameReadinessServiceFactory.Create() is UnavailableGameReadinessService
             && GameplayLifecycleServiceFactory.Create() is UnavailableGameplayLifecycleService
             && LeaderboardServiceFactory.Create() is UnavailableLeaderboardService
+            && ReviewServiceFactory.Create() is UnavailableReviewService
+            && ShortcutServiceFactory.Create() is UnavailableShortcutService
+            && ServerClockFactory.Create() is UnavailableServerClock
             && LocalizationServiceFactory.Create(catalog) is UnavailableLocalizationService);
 
         bool threw = false;

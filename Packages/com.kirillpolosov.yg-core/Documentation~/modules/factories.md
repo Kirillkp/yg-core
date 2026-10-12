@@ -21,6 +21,9 @@
 | `UnavailableLeaderboardService` | |
 | `UnavailableLocalizationService` | Язык определить нельзя, но строки из каталога игры работают и язык переключается вручную. Начальный язык: язык по умолчанию каталога |
 | `UnavailablePurchasesService` | |
+| `UnavailableReviewService` | (с `v0.2.0`) |
+| `UnavailableShortcutService` | (с `v0.2.0`) |
+| `UnavailableServerClock` | (с `v0.2.0`). Запасной вариант (локальные часы) выбирает игра |
 | `UnavailableSaveService` | Загрузка возвращает `PlatformUnavailable`, а не пустое сохранение |
 
 У аналитики и аудиофокуса заглушек нет (их не было в «Обби»).
@@ -43,6 +46,9 @@
 | `PurchasesServiceFactory` | `IPurchasesService` | `Payments_yg` | `editorService` |
 | `SaveServiceFactory` | `ISaveService` | `Storage_yg` | `editorService`, `storageFieldName` (см. [yandex.md](yandex.md)) |
 | `LocalizationServiceFactory` | `ILocalizationService` | `Localization_yg` | `catalog` (обязателен), `editorService` |
+| `ReviewServiceFactory` | `IReviewService` | `YandexGamesPlatform_yg` | `editorService` |
+| `ShortcutServiceFactory` | `IShortcutService` | `YandexGamesPlatform_yg` | `editorService` |
+| `ServerClockFactory` | `IServerClock` | `YandexGamesPlatform_yg` | `editorService` |
 
 В редакторе параметр `editorService` позволяет передать мок с нужным сценарием:
 

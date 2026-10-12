@@ -24,6 +24,9 @@ namespace YgCore.Yandex
         /// <summary>Мост хранилища с подтверждением записи.</summary>
         internal const string StorageBridgeTypeName = "YgCore.YandexBridge.YgStorageBridge";
 
+        /// <summary>Мост возможностей платформы напрямую через SDK (оценка игры, ярлык, серверное время).</summary>
+        internal const string FeaturesBridgeTypeName = "YgCore.YandexBridge.YgPlatformFeaturesBridge";
+
         /// <summary>Находит тип моста SDK среди загруженных сборок или возвращает null, если его нет.</summary>
         public static Type ResolveBridgeType()
         {

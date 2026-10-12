@@ -165,6 +165,9 @@ static class P
         // Веб-качество и подстановка строк в надписи.
         WebAndTextChecks.Run(Check);
 
+        // v0.2.0: оценка, ярлык, серверное время, составной каталог строк.
+        PlatformChecks.Run(Check);
+
         Console.WriteLine(fails == 0 ? "\nВсе проверки пройдены." : $"\nПровалено: {fails}");
         return fails == 0 ? 0 : 1;
     }

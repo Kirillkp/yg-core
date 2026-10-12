@@ -48,6 +48,9 @@ ads.Scenario = MockPlatformScenario.Denied;
 | `EditorMockLeaderboardService` | `ILeaderboardService` | Один общий список записей на все таблицы, без сортировки; `SeedEntry(...)` |
 | `EditorMockLocalizationService` | `ILocalizationService` | Нужен каталог игры; язык меняется вручную |
 | `EditorMockPurchasesService` | `IPurchasesService` | Каталог задаёт игра (конструктор с товарами или список `Catalog`); `AddPendingPurchase(...)`, `WasConsumed(token)`, `ReturnDuplicateToken` |
+| `EditorMockReviewService` | `IReviewService` | Повторяет правила платформы: запрос без `CanReviewAsync` даёт `Error`, после запроса в сессии оценка недоступна. Управление: `CanReview`, `UserSendsFeedback`, счётчик `RequestCount` |
+| `EditorMockShortcutService` | `IShortcutService` | Показ без `CanShowPromptAsync` даёт `Error`, после согласия диалог недоступен. Управление: `CanShow`, `UserAccepts`, счётчик `PromptCount` |
+| `EditorMockServerClock` | `IServerClock` | По умолчанию системные часы UTC. `SetUtcNow(...)` фиксирует время, `Advance(delta)` двигает (в том числе назад), `Release()` возвращает системные часы: так проверяются границы суток и подмена времени |
 | `EditorMockSaveService` | `ISaveService` | Хранилище в памяти; `SimulateTimeout` даёт `Error` и не меняет данные; нет ключа: успех со значением `null` |
 
 ## Чего делать нельзя

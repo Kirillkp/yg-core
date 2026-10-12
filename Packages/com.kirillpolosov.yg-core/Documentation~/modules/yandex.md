@@ -14,7 +14,7 @@
 Игра ──→ интерфейсы (Contracts) ──→ сервисы PluginYG2*Service        (YgCore.Yandex, есть .asmdef)
                                           │ рефлексия (по имени типа)
                                           ▼
-                                     мосты YgSdkBridge, YgPaymentsBridge, YgStorageBridge,
+                                     мосты YgSdkBridge, YgPaymentsBridge, YgStorageBridge, YgPlatformFeaturesBridge (с v0.2.0),
                                      расширение SavesYG                 (YandexBridge, в Assets игры, Assembly-CSharp)
                                           │ прямые вызовы YG2
                                           ▼
@@ -44,8 +44,11 @@ PluginYG2 компилируется в `Assembly-CSharp`. Сборки с `.asm
 | `PluginYG2LocalizationService` | `ILocalizationService` | `Localization_yg` | `YG.YG2` напрямую | нет |
 | `PluginYG2GameReadinessService` | `IGameReadinessService` | `YandexGamesPlatform_yg` | `YgSdkBridge` | нет |
 | `PluginYG2GameplayLifecycleService` | `IGameplayLifecycleService` | `YandexGamesPlatform_yg` | `YgSdkBridge` | нет |
+| `PluginYG2ReviewService` (с v0.2.0) | `IReviewService` | `YandexGamesPlatform_yg` | `YgPlatformFeaturesBridge` | 15 с проверка, 120 с окно |
+| `PluginYG2ShortcutService` (с v0.2.0) | `IShortcutService` | `YandexGamesPlatform_yg` | `YgPlatformFeaturesBridge` | 15 с проверка, 120 с диалог |
+| `PluginYG2ServerClock` (с v0.2.0) | `IServerClock` | `YandexGamesPlatform_yg` | `YgPlatformFeaturesBridge` | 15 секунд |
 
-Все сервисы реализуют `IDisposable`: при выгрузке они отписываются от статических событий и завершают ожидающие операции статусом `PlatformUnavailable`.
+Три сервиса с пометкой «с v0.2.0» не реализуют `IDisposable` (подписок на статические события у них нет). Остальные реализуют `IDisposable`: при выгрузке они отписываются от статических событий и завершают ожидающие операции статусом `PlatformUnavailable`.
 
 Статусы результатов каждой операции описаны в [contracts.md](contracts.md).
 
@@ -64,6 +67,24 @@ PluginYG2 компилируется в `Assembly-CSharp`. Сборки с `.asm
 ### Покупки (`YgPaymentsBridge` + `YgCorePayments.jslib`)
 
 Штатный PluginYG2 гасит покупку сразу после оплаты, до выдачи награды. Заплатка гасит её только по явному `ConsumeAsync(token)`. Схема из двух шагов описана в [contracts.md](contracts.md).
+
+### Оценка игры, ярлык и серверное время (`YgPlatformFeaturesBridge` + `YgCorePlatformFeatures.jslib`, с v0.2.0)
+
+Нужных модулей в установленном PluginYG2 нет: в каталоге модулей плагина есть `Review` и `ServerTime`, но в проекте они не установлены (проверено 2026-10-12 по `Editor/ServerInfoYG2.json` и каталогам `Modules` стенда и «Обби»), а ярлыка в каталоге нет совсем. Поэтому мост вызывает SDK напрямую через глобальный объект `ysdk`, который создаёт PluginYG2. Это снимает зависимость от версий и модулей плагина. Мост работает на `YandexGamesPlatform_yg` и не требует включённых модулей PluginYG2.
+
+Сигнатуры, на которых построен код (документация Яндекс Игр, прочитано 2026-10-12):
+
+| Контракт | Вызов SDK | Что берём из ответа |
+|---|---|---|
+| `CanReviewAsync` | `ysdk.feedback.canReview()` → `{ value, reason? }` | `value`; причина (`NO_AUTH`, `GAME_RATED`, `REVIEW_ALREADY_REQUESTED`, `REVIEW_WAS_REQUESTED`, `UNKNOWN`) идёт в `Message` |
+| `RequestReviewAsync` | `ysdk.feedback.requestReview()` → `{ feedbackSent }` | `feedbackSent` |
+| `CanShowPromptAsync` | `ysdk.shortcut.canShowPrompt()` → `{ canShow }` | `canShow` |
+| `ShowPromptAsync` | `ysdk.shortcut.showPrompt()` → `{ outcome }` | `outcome === 'accepted'` |
+| `GetUtcNowAsync` | `ysdk.serverTime()` → миллисекунды Unix | см. оговорку ниже |
+
+**Серверное время: оговорка.** В официальных страницах документации Яндекс Игр, доступных при подготовке версии, `ysdk.serverTime()` не нашлось. Что серверное время существует и отдаётся в миллисекундах Unix, подтверждает описание модуля `ServerTime` PluginYG2 (его метод `YG2.ServerTime()` возвращает `long` в миллисекундах, вне Яндекса падает назад на локальные часы). Что именно вызов называется `ysdk.serverTime()`, взято по памяти о SDK и не подтверждено документом. Поэтому мост проверяет наличие функции (`typeof ysdk.serverTime === 'function'`) и принимает как значение, так и Promise. Если функции нет, `PluginYG2ServerClock.IsPlatformAvailable == false`, а `GetUtcNowAsync` возвращает `PlatformUnavailable`: игра берёт локальные часы (запасной вариант). **Нужна проверка на стенде** (кнопка «Серверное время»): подтвердить наличие функции и единицы.
+
+Как устроен мост: каждый запрос получает идентификатор, ответ приходит одним сообщением `YgCoreFeatureReply` (JSON `id`, `ok`, `supported`, `flag`, `number`, `reason`, `error`) и ищется по идентификатору, как в мосте хранилища. Сбой SDK приходит ответом `ok=false` (статус `Error`), «функции нет» ответом `supported=false` (статус `PlatformUnavailable`). После окон оценки и ярлыка фокус возвращается игре функцией `FocusGame`, если она есть. Окно оценки и диалог ярлыка не открываются повторно, пока открыто предыдущее.
 
 ## Подключение
 
@@ -125,11 +146,11 @@ var save = SaveServiceFactory.Create(storageFieldName: "obbyPotopStorage");
 
 | Команда | Что проверяет |
 |---|---|
-| `dotnet run --project Tools/YandexChecks` | 47 проверок: реальные мосты и сервисы с заглушкой PluginYG2: реклама (успех, отказ, ошибка, события), лидерборд, вход (успех, отмена, повторный вызов), готовность и геймплей (очередь до SDK), язык, сбои сохранения, фабрики |
+| `dotnet run --project Tools/YandexChecks` | 71 проверка: реальные мосты и сервисы с заглушкой PluginYG2: реклама (успех, отказ, ошибка, события), лидерборд, вход (успех, отмена, повторный вызов), готовность и геймплей (очередь до SDK), язык (в том числе составной каталог), сбои сохранения, оценка, ярлык и серверное время (нет функции в SDK, успех, отказ игрока, ошибка, чужой и повреждённый ответ, повторное окно, таймаут, SDK не готов), фабрики |
 | `dotnet build Tools/YandexChecks -p:WebGLCompile=true` | Компиляция ветки WebGL (внешние функции `DllImport`) |
 | `python3 Tools/check-jslib.py` | Имена функций и сообщений в C# и `.jslib` совпадают |
 
-**Не проверено:** работа с настоящим PluginYG2, JavaScript-сторона покупок и хранилища, успешные покупки и сохранение, поведение в `Assembly-CSharp`. Это проверяет стенд на Яндексе (секции «Покупки», «Сохранение», «Авторизация», «Реклама» в `Docs/STAND_CHECKLIST.md`).
+**Не проверено:** работа с настоящим PluginYG2, JavaScript-сторона покупок, хранилища и возможностей платформы (оценка, ярлык, время), успешные покупки и сохранение, поведение в `Assembly-CSharp`. Это проверяет стенд на Яндексе (секции «Покупки», «Сохранение», «Авторизация», «Реклама» в `Docs/STAND_CHECKLIST.md`).
 
 ## Отличия от «Обби Потоп»
 

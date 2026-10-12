@@ -9,7 +9,7 @@ namespace YgCore.Localization
     /// Поведение совпадает с каталогом «Обби Потоп»: при двух языках (ru и en) и языке по умолчанию en
     /// результат тот же, что был у прежнего статического каталога.
     /// </summary>
-    public sealed class DictionaryLocalizationCatalog : ILocalizationCatalog
+    public sealed class DictionaryLocalizationCatalog : ILocalizationCatalog, ILocalizationCatalogLookup
     {
         private static readonly char[] LanguageSeparators = { '-', '_' };
 
@@ -55,6 +55,19 @@ namespace YgCore.Localization
             }
 
             return tables.ContainsKey(normalized) ? normalized : DefaultLanguage;
+        }
+
+        public bool TryGetTemplate(string language, string key, out string template)
+        {
+            template = null;
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(language))
+            {
+                return false;
+            }
+
+            // Строго указанный язык: запасного языка здесь нет, его подбирает вызывающий (составной каталог).
+            return tables.TryGetValue(language.Trim().ToLowerInvariant(), out var table)
+                && table.TryGetValue(key, out template);
         }
 
         public string Get(string language, string key, params object[] arguments)
