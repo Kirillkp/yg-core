@@ -158,10 +158,20 @@ namespace YgCoreStand
                 ("Невыданные", () => app.RestoreAsync()),
                 ("Погасить последнюю", () => ConsumeLast()));
 
+            Section(buttons, "Оценка и ярлык",
+                ("Оценка: можно ли", () => app.ReviewCanAsync()),
+                ("Оценка: показать окно", () => app.ReviewRequestAsync()),
+                ("Ярлык: можно ли", () => app.ShortcutCanAsync()),
+                ("Ярлык: показать диалог", () => app.ShortcutShowAsync()));
+
+            Section(buttons, "Время",
+                ("Серверное время", () => app.ServerTimeAsync()));
+
             Section(buttons, "Самопроверки",
                 ("Сохранение: запись/чтение", () => app.RunSaveCheckAsync()),
                 ("Сохранение: порядок", () => app.RunSaveOrderCheckAsync()),
-                ("Язык", () => app.RunLanguageCheckAsync()));
+                ("Язык", () => app.RunLanguageCheckAsync()),
+                ("Составной каталог строк", () => { app.RunCompositeCatalogCheck(); return Task.CompletedTask; }));
 
             BuildTabs(root, buttons);
             BuildLog(root);

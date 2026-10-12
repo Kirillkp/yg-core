@@ -26,6 +26,9 @@ namespace YgCoreStand
         public ILocalizationService Language { get; private set; }
         public IPurchasesService Purchases { get; private set; }
         public ISaveService Save { get; private set; }
+        public IReviewService Review { get; private set; }
+        public IShortcutService Shortcut { get; private set; }
+        public IServerClock Clock { get; private set; }
 
         // Звук и пауза собираются так же, как в игре: платформенные события превращаются в причины паузы,
         // а директор звука реагирует на координатор пауз.
@@ -41,12 +44,19 @@ namespace YgCoreStand
         /// <summary>Создаёт сервисы через фабрики пакета, как это делает игра.</summary>
         public void Initialize()
         {
-            var tables = new Dictionary<string, IReadOnlyDictionary<string, string>>
+            // Два каталога, как в игре на шаблоне: строки «игры» и строки «оболочки» собираются в один.
+            // «Игра» стоит первой и переопределяет общий ключ stand.shared.
+            var gameCatalog = new DictionaryLocalizationCatalog("en", new Dictionary<string, IReadOnlyDictionary<string, string>>
             {
-                ["en"] = new Dictionary<string, string> { ["stand.hello"] = "Hello" },
+                ["en"] = new Dictionary<string, string> { ["stand.hello"] = "Hello", ["stand.shared"] = "game" },
                 ["ru"] = new Dictionary<string, string> { ["stand.hello"] = "Привет" },
-            };
-            var catalog = new DictionaryLocalizationCatalog("en", tables);
+            });
+            var shellCatalog = new DictionaryLocalizationCatalog("en", new Dictionary<string, IReadOnlyDictionary<string, string>>
+            {
+                ["en"] = new Dictionary<string, string> { ["shell.title"] = "Shell", ["stand.shared"] = "shell" },
+                ["ru"] = new Dictionary<string, string> { ["shell.title"] = "Оболочка", ["stand.shared"] = "оболочка" },
+            });
+            var catalog = new CompositeLocalizationCatalog(gameCatalog, shellCatalog);
 
             Ads = AdsServiceFactory.Create();
             Auth = AuthorizationServiceFactory.Create();
@@ -56,6 +66,9 @@ namespace YgCoreStand
             Language = LocalizationServiceFactory.Create(catalog);
             Purchases = PurchasesServiceFactory.Create();
             Save = SaveServiceFactory.Create(storageFieldName: StorageFieldName);
+            Review = ReviewServiceFactory.Create();
+            Shortcut = ShortcutServiceFactory.Create();
+            Clock = ServerClockFactory.Create();
 
             Pause = new PauseCoordinator();
             State = new GameplayStateService(Pause);
@@ -140,6 +153,11 @@ namespace YgCoreStand
             Report("Язык", Language.IsPlatformAvailable);
             Report("Покупки", Purchases.IsPlatformAvailable);
             Report("Сохранение", Save.IsPlatformAvailable);
+            Report("Оценка игры", Review.IsPlatformAvailable);
+            Report("Ярлык", Shortcut.IsPlatformAvailable);
+
+            // Серверное время: отсутствие функции у SDK не ошибка, игра тогда берёт локальные часы.
+            StandLog.Info($"Серверное время: SDK отдаёт={Clock.IsPlatformAvailable} (если нет, игра берёт локальные часы UTC)");
         }
 
         private static void Report(string name, bool available)
@@ -273,6 +291,87 @@ namespace YgCoreStand
             StandLog.Check(Language.Get("stand.hello") == "Привет", "Язык: русская строка");
             Language.SetLanguage("en");
             StandLog.Check(Language.Get("stand.hello") == "Hello", "Язык: английская строка");
+        }
+
+        /// <summary>
+        /// Самопроверка составного каталога на живом сервисе локализации: строки двух каталогов в одном сервисе,
+        /// переопределение общего ключа первым каталогом, запасной язык для строки без перевода.
+        /// </summary>
+        public void RunCompositeCatalogCheck()
+        {
+            var previous = Language.CurrentLanguage;
+            Language.SetLanguage("ru");
+            StandLog.Check(Language.Get("stand.hello") == "Привет", "Каталоги: строка каталога игры (ru)");
+            StandLog.Check(Language.Get("shell.title") == "Оболочка", "Каталоги: строка каталога оболочки (ru)");
+            StandLog.Check(Language.Get("stand.shared") == "оболочка",
+                "Каталоги: русская строка оболочки не перебита английским запасным вариантом игры");
+            Language.SetLanguage("en");
+            StandLog.Check(Language.Get("stand.shared") == "game", "Каталоги: общий ключ берётся из каталога игры (первый приоритет)");
+            StandLog.Check(Language.Get("stand.нет") == "stand.нет", "Каталоги: нет ключа -> виден сам ключ");
+            Language.SetLanguage(previous);
+        }
+
+        /// <summary>Спрашивает у платформы, можно ли показать окно оценки (без показа).</summary>
+        public async Task ReviewCanAsync()
+        {
+            var result = await Review.CanReviewAsync();
+            Describe("Оценка: CanReview", result);
+            if (result.IsSuccess) StandLog.Info($"  можно показать окно оценки: {result.Value}");
+        }
+
+        /// <summary>Порядок как в игре: сначала CanReview, окно только при true. Ответ игрока выводится в журнал.</summary>
+        public async Task ReviewRequestAsync()
+        {
+            var can = await Review.CanReviewAsync();
+            Describe("Оценка: CanReview", can);
+            if (!can.IsSuccess || !can.Value)
+            {
+                StandLog.Info("  окно оценки сейчас недоступно (причина выше), запрос не отправляется.");
+                return;
+            }
+
+            var result = await Review.RequestReviewAsync();
+            Describe("Оценка: окно", result);
+            if (result.IsSuccess) StandLog.Info(result.Value ? "  игрок оценил игру." : "  игрок закрыл окно без оценки.");
+        }
+
+        public async Task ShortcutCanAsync()
+        {
+            var result = await Shortcut.CanShowPromptAsync();
+            Describe("Ярлык: CanShowPrompt", result);
+            if (result.IsSuccess) StandLog.Info($"  можно показать диалог: {result.Value}");
+        }
+
+        public async Task ShortcutShowAsync()
+        {
+            var can = await Shortcut.CanShowPromptAsync();
+            Describe("Ярлык: CanShowPrompt", can);
+            if (!can.IsSuccess || !can.Value)
+            {
+                StandLog.Info("  диалог ярлыка сейчас недоступен, показ не запрашивается.");
+                return;
+            }
+
+            var result = await Shortcut.ShowPromptAsync();
+            Describe("Ярлык: диалог", result);
+            if (result.IsSuccess) StandLog.Info(result.Value ? "  игрок согласился (accepted)." : "  игрок отказался.");
+        }
+
+        /// <summary>Читает серверное время и сравнивает с локальным: на Яндексе разница обычно мала, но не нулевая.</summary>
+        public async Task ServerTimeAsync()
+        {
+            var result = await Clock.GetUtcNowAsync();
+            Describe("Серверное время", result);
+            if (!result.IsSuccess)
+            {
+                StandLog.Info("  серверного времени нет: игра берёт локальные часы UTC (запасной вариант).");
+                return;
+            }
+
+            var local = DateTime.UtcNow;
+            var diff = (result.Value - local).TotalSeconds;
+            StandLog.Info($"  сервер UTC={result.Value:yyyy-MM-dd HH:mm:ss}, локально UTC={local:yyyy-MM-dd HH:mm:ss}, разница={diff:0.0} с");
+            StandLog.Check(result.Value.Kind == DateTimeKind.Utc && Math.Abs(diff) < 86400d, "Серверное время: UTC и в пределах суток от локального");
         }
 
         private static void Describe(string name, PlatformServiceResult result)
