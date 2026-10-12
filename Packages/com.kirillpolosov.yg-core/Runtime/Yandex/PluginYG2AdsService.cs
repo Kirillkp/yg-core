@@ -9,11 +9,14 @@ namespace YgCore.Yandex
     /// <summary>
     /// Реклама через PluginYG2. Одновременно показывается не больше одной рекламы.
     /// Результат собирается из событий моста: открыта, награда выдана, закрыта, ошибка.
-    /// Если за 3 минуты ответа нет, возвращается Error.
+    /// Если реклама не открылась за 20 секунд или за 3 минуты нет ответа, возвращается Error.
     /// </summary>
     public sealed class PluginYG2AdsService : IAdsService, IDisposable
     {
         private static readonly TimeSpan AdTimeout = TimeSpan.FromMinutes(3d);
+
+        // Сколько ждать, пока платформа откроет рекламу (событие «открыта»). Без него возвращается Error.
+        private static readonly TimeSpan OpenTimeout = TimeSpan.FromSeconds(20d);
 
         private readonly MethodInfo isSdkReadyMethod;
         private readonly MethodInfo showRewardedMethod;
@@ -160,6 +163,18 @@ namespace YgCore.Yandex
                     pendingOperation = null;
                     return PlatformServiceResult.Denied(
                         "Реклама ещё не готова.");
+                }
+
+                // Если платформа за короткое время вообще не открыла рекламу (блокировщик, аккаунт без рекламы, молчание SDK),
+                // не ждём полные три минуты: игрок и игра не должны зависать в ожидании.
+                var opened = await Task.WhenAny(
+                    operation.Task,
+                    RealtimeDelay.Delay(OpenTimeout));
+                if (opened != operation.Task && !pendingAdOpened && ReferenceEquals(pendingOperation, operation))
+                {
+                    CompletePending(
+                        PlatformServiceResult.Error(
+                            "Реклама не открылась вовремя."));
                 }
 
                 var completed = await Task.WhenAny(
