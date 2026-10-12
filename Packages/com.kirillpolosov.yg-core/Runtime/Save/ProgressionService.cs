@@ -37,7 +37,12 @@ namespace YgCore.Save
         private bool wasAuthorized;
         private bool isApplying;
         private bool isSynchronizingProfile;
-        private bool saveRequestedDuringSynchronization;
+
+        // Вход состоялся, но облако не прочиталось (сбой сети): записывать нельзя, иначе прогресс гостя затрёт облачный.
+        // Слияние повторяется, запись разрешается после его успеха.
+        private bool isMergePending;
+        private bool isMergeRetrying;
+        private const int MergeRetryAttempts = 8;
         private int suppressionDepth;
         private bool isInitialized;
         private bool isDisposed;
@@ -136,13 +141,6 @@ namespace YgCore.Save
         /// </summary>
         public void RequestCriticalSave()
         {
-            if (isSynchronizingProfile)
-            {
-                // Идёт слияние при входе: запись сейчас невозможна, но запрос терять нельзя (награда или покупка
-                // за время слияния). Слияние само запишет итог, а при сбое слияния запись будет повторена.
-                saveRequestedDuringSynchronization = true;
-            }
-
             if (!IsChangeTrackingSuppressed)
             {
                 CancelBatchSave();
@@ -300,6 +298,13 @@ namespace YgCore.Save
                     "Хранилище недоступно: прогресс остаётся в этой сессии.");
             }
 
+            if (isMergePending)
+            {
+                // Облако ещё не прочитано: запись затёрла бы его. После слияния итог записывается сам.
+                return PlatformServiceResult.Unavailable(
+                    "Запись отложена до слияния с облачным прогрессом.");
+            }
+
             await saveLock.WaitAsync();
             try
             {
@@ -307,6 +312,12 @@ namespace YgCore.Save
                 if (isDisposed || IsWriteBlocked)
                 {
                     return PlatformServiceResult.Error("Запись прогресса заблокирована.");
+                }
+
+                if (isMergePending)
+                {
+                    return PlatformServiceResult.Unavailable(
+                        "Запись отложена до слияния с облачным прогрессом.");
                 }
 
                 revision++;
@@ -347,6 +358,12 @@ namespace YgCore.Save
         {
             // Слияние нужно только при входе гостя в аккаунт.
             var isAuthorized = args.Profile?.IsAuthorized == true;
+            if (!isAuthorized)
+            {
+                // Выход из аккаунта: ожидающее слияние больше не нужно, игрок снова гость.
+                isMergePending = false;
+            }
+
             if (!wasAuthorized && isAuthorized)
             {
                 await MergeGuestWithCloudAsync();
@@ -363,7 +380,6 @@ namespace YgCore.Save
             }
 
             CancelBatchSave();
-            saveRequestedDuringSynchronization = false;
             isSynchronizingProfile = true;
             bool isMerged;
             await saveLock.WaitAsync();
@@ -380,14 +396,50 @@ namespace YgCore.Save
             if (isMerged)
             {
                 // Итоговая запись включает и то, что было получено за время слияния.
-                saveRequestedDuringSynchronization = false;
-                await SaveImmediatelyAsync();
+                isMergePending = false;
+                    await SaveImmediatelyAsync();
             }
-            else if (saveRequestedDuringSynchronization)
+            else if (!IsWriteBlocked && !isDisposed)
             {
-                // Слияние не состоялось (сбой сети), а изменения за это время просили запись: повторяем её.
-                saveRequestedDuringSynchronization = false;
-                RequestBatchSave();
+                // Слияние не состоялось (сбой сети): запись удерживается, слияние повторяется.
+                // Изменения за это время не теряются: они в памяти и уйдут в итоговой записи после слияния.
+                isMergePending = true;
+                    _ = RetryPendingMergeAsync();
+            }
+        }
+
+        private async Task RetryPendingMergeAsync()
+        {
+            if (isMergeRetrying)
+            {
+                return;
+            }
+
+            isMergeRetrying = true;
+            try
+            {
+                for (var attempt = 0; attempt < MergeRetryAttempts; attempt++)
+                {
+                    await RealtimeDelay.Delay(options.RetryDelay);
+                    if (!isMergePending || isDisposed || IsWriteBlocked)
+                    {
+                        return;
+                    }
+
+                    await MergeGuestWithCloudAsync();
+                    if (!isMergePending)
+                    {
+                        return;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                StatusMessage = exception.Message;
+            }
+            finally
+            {
+                isMergeRetrying = false;
             }
         }
 
@@ -433,11 +485,6 @@ namespace YgCore.Save
 
         private void RequestBatchSave(TimeSpan? delay)
         {
-            if (isSynchronizingProfile)
-            {
-                saveRequestedDuringSynchronization = true;
-            }
-
             if (IsChangeTrackingSuppressed || IsWriteBlocked || isDisposed)
             {
                 return;

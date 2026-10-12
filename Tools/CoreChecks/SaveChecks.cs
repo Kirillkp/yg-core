@@ -352,6 +352,25 @@ static class SaveChecks
                 waiting && WaitFor(() => rig.StoredData() != null && rig.StoredData().balance == 40) && rig.Economy.Balance == 40);
         }
 
+        // Сбой облака при входе: запись удерживается и не затирает облако, после успешного повтора слияние применяется.
+        using (var rig = new Rig())
+        {
+            rig.Init();
+            rig.Save.Inner.SetPayload(Key, Payload(new SampleProgress { revision = 5, balance = 300, ownedItemIds = new List<string> { "cloud" } }));
+            rig.Save.Inner.SimulateTimeout = true;
+            rig.Auth.SetAuthorized();
+            WaitFor(() => !rig.Service.IsChangeTrackingSuppressed);
+            var callsBefore = rig.Save.SaveCalls;
+            rig.Economy.TryCredit("w", 10, "run_reward");
+            var held = rig.Service.SaveCriticalAsync();
+            held.Wait(3000);
+            check("вход: пока облако не прочитано, запись удерживается и облако не затирается",
+                rig.Save.SaveCalls == callsBefore);
+            rig.Save.Inner.SimulateTimeout = false;
+            check("вход: после восстановления связи слияние повторяется (баланс 300 из облака, предмет cloud)",
+                WaitFor(() => rig.Economy.Balance == 300 && rig.Binding.OwnedItems.Contains("cloud")));
+        }
+
         // --- NaN в громкости (исправление v0.2.0)
         var nan = float.NaN;
         var nanSettings = SettingsProgressData.Normalized(new SettingsProgressData { musicVolume = nan, sfxVolume = nan });
