@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 using YgCore.Core;
 
 namespace YgCore.Save
@@ -29,7 +28,10 @@ namespace YgCore.Save
             };
         }
 
-        /// <summary>Копия с громкостями, ограниченными диапазоном 0–1. Пустой источник даёт значения по умолчанию.</summary>
+        /// <summary>
+        /// Копия с громкостями, ограниченными диапазоном 0–1. Пустой источник даёт значения по умолчанию.
+        /// Громкость <c>NaN</c> заменяется значением по умолчанию (<c>Mathf.Clamp01</c> её пропускает).
+        /// </summary>
         public static SettingsProgressData Normalized(SettingsProgressData source)
         {
             source = source ?? new SettingsProgressData();
@@ -37,8 +39,10 @@ namespace YgCore.Save
             {
                 musicEnabled = source.musicEnabled,
                 sfxEnabled = source.sfxEnabled,
-                musicVolume = Mathf.Clamp01(source.musicVolume),
-                sfxVolume = Mathf.Clamp01(source.sfxVolume)
+                musicVolume = SessionGameSettingsService.SanitizeVolume(
+                    source.musicVolume, SessionGameSettingsService.DefaultMusicVolume),
+                sfxVolume = SessionGameSettingsService.SanitizeVolume(
+                    source.sfxVolume, SessionGameSettingsService.DefaultSfxVolume)
             };
         }
 

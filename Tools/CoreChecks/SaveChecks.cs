@@ -23,7 +23,23 @@ static class SaveChecks
 
         public bool IsPlatformAvailable => Inner.IsPlatformAvailable;
 
-        public Task<PlatformServiceResult<string>> LoadAsync(string key) => Inner.LoadAsync(key);
+        // Если задан, загрузка ждёт, пока проверка не разрешит: так воспроизводится «окно слияния»,
+        // в котором игрок успевает получить награду или купить предмет.
+        public TaskCompletionSource<bool> LoadGate;
+        public volatile bool LoadWaiting;
+
+        public async Task<PlatformServiceResult<string>> LoadAsync(string key)
+        {
+            var gate = LoadGate;
+            if (gate != null)
+            {
+                LoadWaiting = true;
+                await gate.Task;
+                LoadWaiting = false;
+            }
+
+            return await Inner.LoadAsync(key);
+        }
 
         public Task<PlatformServiceResult> SaveAsync(string key, string payload)
         {
@@ -289,6 +305,70 @@ static class SaveChecks
             check("вход: нечитаемое облако не затирается данными гостя", rig.Service.IsWriteBlocked && rig.Service.LoadState == ProgressionLoadState.Corrupted
                 && rig.Save.SaveCalls == callsBefore && rig.Save.Stored == "{повреждено");
         }
+
+
+        // --- Слияние при входе не теряет то, что игрок получил за время слияния (исправление v0.2.0)
+        using (var rig = new Rig())
+        {
+            rig.Init();
+            rig.Economy.TryCredit("g", 30, "run_reward");
+            rig.Binding.AddItem("b");
+            WaitFor(() => rig.Save.SaveCalls >= 1);
+
+            rig.Save.Inner.SetPayload(Key, Payload(new SampleProgress { revision = 50, balance = 20, ownedItemIds = new List<string> { "a" } }));
+            rig.Save.LoadGate = new TaskCompletionSource<bool>();
+            var callsBefore = rig.Save.SaveCalls;
+            rig.Auth.SetAuthorized();
+            var waiting = WaitFor(() => rig.Save.LoadWaiting);
+
+            // «Окно слияния»: облако ещё отвечает, а игрок уже получил награду и купил предмет.
+            rig.Economy.TryCredit("w", 50, "run_reward");
+            rig.Binding.AddItem("w");
+            var purchaseSave = rig.Service.SaveCriticalAsync();
+            rig.Save.LoadGate.SetResult(true);
+
+            check("вход: награда и покупка за время слияния не теряются (баланс 30+50, предметы a, b, w)",
+                waiting && purchaseSave.Wait(3000) && WaitFor(() => rig.Save.SaveCalls > callsBefore)
+                && rig.Economy.Balance == 80 && rig.Binding.OwnedItems.Count == 3 && rig.Binding.OwnedItems.Contains("w"));
+            check("вход: в хранилище записан итог вместе с наградой за время слияния",
+                WaitFor(() => rig.StoredData().balance == 80) && rig.StoredData().ownedItemIds.Contains("w") && rig.StoredData().revision > 50);
+            check("вход: запрос записи во время слияния завершается успехом (покупка не зависает)", purchaseSave.Result);
+        }
+
+        // Слияние не состоялось (сбой облака), но за время ожидания была награда: запись всё равно выполняется.
+        using (var rig = new Rig())
+        {
+            rig.Init();
+            rig.Save.Inner.SetPayload(Key, Payload(new SampleProgress { revision = 5, balance = 1 }));
+            rig.Save.LoadGate = new TaskCompletionSource<bool>();
+            rig.Auth.SetAuthorized();
+            var waiting = WaitFor(() => rig.Save.LoadWaiting);
+            rig.Economy.TryCredit("w", 40, "run_reward");
+            rig.Save.Inner.SimulateTimeout = true;
+            rig.Save.LoadGate.SetResult(true);
+            WaitFor(() => !rig.Service.IsChangeTrackingSuppressed);
+            rig.Save.Inner.SimulateTimeout = false;
+            check("вход: сбой облака при слиянии, награда за это время всё равно записывается",
+                waiting && WaitFor(() => rig.StoredData() != null && rig.StoredData().balance == 40) && rig.Economy.Balance == 40);
+        }
+
+        // --- NaN в громкости (исправление v0.2.0)
+        var nan = float.NaN;
+        var nanSettings = SettingsProgressData.Normalized(new SettingsProgressData { musicVolume = nan, sfxVolume = nan });
+        check("настройки: громкость NaN заменяется значением по умолчанию",
+            nanSettings.musicVolume == SessionGameSettingsService.DefaultMusicVolume && nanSettings.sfxVolume == SessionGameSettingsService.DefaultSfxVolume);
+        var infSettings = SettingsProgressData.Normalized(new SettingsProgressData { musicVolume = float.PositiveInfinity, sfxVolume = float.NegativeInfinity });
+        check("настройки: бесконечность ограничивается 0..1", infSettings.musicVolume == 1f && infSettings.sfxVolume == 0f);
+        var sessionSettings = new SessionGameSettingsService(nan, nan);
+        check("сервис настроек: NaN в конструкторе -> значения по умолчанию",
+            sessionSettings.MusicVolume == SessionGameSettingsService.DefaultMusicVolume && sessionSettings.SfxVolume == SessionGameSettingsService.DefaultSfxVolume);
+        sessionSettings.SetMusicVolume(0.7f);
+        sessionSettings.SetMusicVolume(nan);
+        sessionSettings.SetSfxVolume(nan);
+        check("сервис настроек: SetVolume(NaN) оставляет текущую громкость", sessionSettings.MusicVolume == 0.7f && !float.IsNaN(sessionSettings.SfxVolume));
+        sessionSettings.Restore(true, true, nan, nan);
+        check("сервис настроек: Restore(NaN) -> значения по умолчанию",
+            sessionSettings.MusicVolume == SessionGameSettingsService.DefaultMusicVolume && sessionSettings.SfxVolume == SessionGameSettingsService.DefaultSfxVolume);
 
         // --- Выгрузка
         using (var rig = new Rig())

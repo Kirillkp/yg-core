@@ -103,8 +103,9 @@ state.CompleteBoot();
 | Что | Назначение |
 |---|---|
 | `IGameSettingsService.IsMusicEnabled`, `IsSfxEnabled`, `MusicVolume`, `SfxVolume` | Текущие значения. Громкость от 0 до 1 |
-| `SetMusicEnabled`, `SetSfxEnabled`, `SetMusicVolume`, `SetSfxVolume` | Изменение. Значения громкости ограничиваются диапазоном 0–1. Событие только при реальном изменении |
-| `SessionGameSettingsService.Restore(...)` | Установка всех значений из сохранения. Событие приходит всегда |
+| `SetMusicEnabled`, `SetSfxEnabled`, `SetMusicVolume`, `SetSfxVolume` | Изменение. Значения громкости ограничиваются диапазоном 0–1. `NaN` игнорируется (громкость остаётся прежней). Событие только при реальном изменении |
+| `SessionGameSettingsService.Restore(...)` | Установка всех значений из сохранения. Событие приходит всегда. Громкость `NaN` заменяется значением по умолчанию |
+| `SessionGameSettingsService.SanitizeVolume(volume, fallback)` | Ограничение громкости 0–1 с заменой `NaN` запасным значением (с `v0.2.0`: `Mathf.Clamp01` `NaN` не убирает) |
 | `SessionGameSettingsService(music, sfx)` | Свои стартовые громкости. Без параметров: музыка 0.5, эффекты 0.1 |
 
 ### Прочее
@@ -131,7 +132,7 @@ state.CompleteBoot();
 
 ## Как проверить
 
-- Логика паузы, экономики, состояний и настроек проверяется без Unity: `dotnet run --project Tools/CoreChecks` (224 проверки вместе с остальными модулями; на Core приходится 25).
+- Логика паузы, экономики, состояний и настроек проверяется без Unity: `dotnet run --project Tools/CoreChecks` (278 проверок вместе с остальными модулями).
 - На стенде (секция «Пауза»): музыка встаёт на паузу при рекламе и возвращается после неё. Секция появится вместе со стендом.
 
 ## Отличия от «Обби Потоп»

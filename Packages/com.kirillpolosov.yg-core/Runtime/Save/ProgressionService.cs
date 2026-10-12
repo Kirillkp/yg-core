@@ -37,6 +37,7 @@ namespace YgCore.Save
         private bool wasAuthorized;
         private bool isApplying;
         private bool isSynchronizingProfile;
+        private bool saveRequestedDuringSynchronization;
         private int suppressionDepth;
         private bool isInitialized;
         private bool isDisposed;
@@ -135,6 +136,13 @@ namespace YgCore.Save
         /// </summary>
         public void RequestCriticalSave()
         {
+            if (isSynchronizingProfile)
+            {
+                // Идёт слияние при входе: запись сейчас невозможна, но запрос терять нельзя (награда или покупка
+                // за время слияния). Слияние само запишет итог, а при сбое слияния запись будет повторена.
+                saveRequestedDuringSynchronization = true;
+            }
+
             if (!IsChangeTrackingSuppressed)
             {
                 CancelBatchSave();
@@ -354,43 +362,14 @@ namespace YgCore.Save
                 return;
             }
 
-            var guest = binding.Capture() ?? new TData();
-            guest.revision = revision;
             CancelBatchSave();
+            saveRequestedDuringSynchronization = false;
             isSynchronizingProfile = true;
-            var shouldSaveMergedProgress = false;
+            bool isMerged;
             await saveLock.WaitAsync();
             try
             {
-                var result = await saveService.LoadAsync(options.StorageKey);
-                if (!result.IsSuccess)
-                {
-                    StatusMessage = result.Message ?? "Не удалось загрузить облачный прогресс.";
-                    return;
-                }
-
-                if (!codec.TryDeserialize(
-                        result.Value,
-                        out var cloud,
-                        out var state,
-                        out var message))
-                {
-                    // Облачный прогресс нечитаем: не затираем его прогрессом гостя.
-                    LoadState = state;
-                    StatusMessage = message;
-                    IsWriteBlocked = true;
-                    Debug.LogWarning(message + " Облачный прогресс не перезаписан.");
-                    return;
-                }
-
-                var merged = codec.Merge(guest, cloud);
-                Apply(merged);
-                revision = merged.revision;
-                LoadState = state == ProgressionLoadState.Empty
-                    ? ProgressionLoadState.Loaded
-                    : state;
-                StatusMessage = "Прогресс гостя и облака объединены.";
-                shouldSaveMergedProgress = true;
+                isMerged = await LoadAndMergeAsync();
             }
             finally
             {
@@ -398,14 +377,67 @@ namespace YgCore.Save
                 isSynchronizingProfile = false;
             }
 
-            if (shouldSaveMergedProgress)
+            if (isMerged)
             {
+                // Итоговая запись включает и то, что было получено за время слияния.
+                saveRequestedDuringSynchronization = false;
                 await SaveImmediatelyAsync();
             }
+            else if (saveRequestedDuringSynchronization)
+            {
+                // Слияние не состоялось (сбой сети), а изменения за это время просили запись: повторяем её.
+                saveRequestedDuringSynchronization = false;
+                RequestBatchSave();
+            }
+        }
+
+        // Выполняется под замком записи. Возвращает true, если облачный прогресс прочитан и слияние применено.
+        private async Task<bool> LoadAndMergeAsync()
+        {
+            var result = await saveService.LoadAsync(options.StorageKey);
+            if (!result.IsSuccess)
+            {
+                StatusMessage = result.Message ?? "Не удалось загрузить облачный прогресс.";
+                return false;
+            }
+
+            if (!codec.TryDeserialize(
+                    result.Value,
+                    out var cloud,
+                    out var state,
+                    out var message))
+            {
+                // Облачный прогресс нечитаем: не затираем его прогрессом гостя.
+                LoadState = state;
+                StatusMessage = message;
+                IsWriteBlocked = true;
+                Debug.LogWarning(message + " Облачный прогресс не перезаписан.");
+                return false;
+            }
+
+            // Снимок гостя берётся ТОЛЬКО ТЕПЕРЬ, после ожидания облака, и между снимком и применением
+            // результата нет ни одного await. Раньше снимок делался до загрузки: пока облако отвечало,
+            // игрок мог получить награду или купить предмет, и применение результата слияния
+            // затирало это старым снимком.
+            var guest = binding.Capture() ?? new TData();
+            guest.revision = revision;
+            var merged = codec.Merge(guest, cloud);
+            Apply(merged);
+            revision = merged.revision;
+            LoadState = state == ProgressionLoadState.Empty
+                ? ProgressionLoadState.Loaded
+                : state;
+            StatusMessage = "Прогресс гостя и облака объединены.";
+            return true;
         }
 
         private void RequestBatchSave(TimeSpan? delay)
         {
+            if (isSynchronizingProfile)
+            {
+                saveRequestedDuringSynchronization = true;
+            }
+
             if (IsChangeTrackingSuppressed || IsWriteBlocked || isDisposed)
             {
                 return;

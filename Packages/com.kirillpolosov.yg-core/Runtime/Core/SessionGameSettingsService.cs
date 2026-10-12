@@ -23,8 +23,18 @@ namespace YgCore.Core
         /// <summary>Позволяет игре задать свои стартовые громкости (значения ограничиваются диапазоном 0–1).</summary>
         public SessionGameSettingsService(float defaultMusicVolume, float defaultSfxVolume)
         {
-            MusicVolume = Mathf.Clamp01(defaultMusicVolume);
-            SfxVolume = Mathf.Clamp01(defaultSfxVolume);
+            MusicVolume = SanitizeVolume(defaultMusicVolume, DefaultMusicVolume);
+            SfxVolume = SanitizeVolume(defaultSfxVolume, DefaultSfxVolume);
+        }
+
+        /// <summary>
+        /// Приводит громкость к диапазону 0–1. <c>NaN</c> заменяется запасным значением:
+        /// <c>Mathf.Clamp01</c> его пропускает (все сравнения с NaN ложны), и громкость осталась бы NaN,
+        /// а дальше NaN попал бы в сохранение и в звук.
+        /// </summary>
+        public static float SanitizeVolume(float volume, float fallback)
+        {
+            return float.IsNaN(volume) ? Mathf.Clamp01(fallback) : Mathf.Clamp01(volume);
         }
 
         public event EventHandler<GameSettingsChangedEventArgs> SettingsChanged;
@@ -61,7 +71,8 @@ namespace YgCore.Core
 
         public void SetMusicVolume(float volume)
         {
-            var normalizedVolume = Mathf.Clamp01(volume);
+            // NaN от интерфейса (например, пустой ползунок) игнорируется: текущая громкость остаётся.
+            var normalizedVolume = SanitizeVolume(volume, MusicVolume);
             if (Mathf.Approximately(MusicVolume, normalizedVolume))
             {
                 return;
@@ -73,7 +84,7 @@ namespace YgCore.Core
 
         public void SetSfxVolume(float volume)
         {
-            var normalizedVolume = Mathf.Clamp01(volume);
+            var normalizedVolume = SanitizeVolume(volume, SfxVolume);
             if (Mathf.Approximately(SfxVolume, normalizedVolume))
             {
                 return;
@@ -95,8 +106,9 @@ namespace YgCore.Core
         {
             IsMusicEnabled = isMusicEnabled;
             IsSfxEnabled = isSfxEnabled;
-            MusicVolume = Mathf.Clamp01(musicVolume);
-            SfxVolume = Mathf.Clamp01(sfxVolume);
+            // Испорченное значение в сохранении (NaN) заменяется громкостью по умолчанию.
+            MusicVolume = SanitizeVolume(musicVolume, DefaultMusicVolume);
+            SfxVolume = SanitizeVolume(sfxVolume, DefaultSfxVolume);
             NotifyChanged();
         }
 
