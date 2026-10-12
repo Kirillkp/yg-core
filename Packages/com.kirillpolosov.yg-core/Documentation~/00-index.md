@@ -20,15 +20,15 @@
 | Модуль | Документ | Статус |
 |---|---|---|
 | Core (состояния, пауза, экономика, настройки) | [modules/core.md](modules/core.md) | выпущен в v0.1.0 |
-| Контракты платформы | [modules/contracts.md](modules/contracts.md) | выпущен в v0.1.0 |
+| Контракты платформы (с v0.2.0 оценка игры, ярлык, серверное время) | [modules/contracts.md](modules/contracts.md) | выпущен в v0.1.0, дополнен в v0.2.0 |
 | Сохранения и прогресс | [modules/save.md](modules/save.md) | выпущен в v0.1.0 |
 | Магазин (логика) | [modules/store.md](modules/store.md) | выпущен в v0.1.0 |
 | Аудио | [modules/audio.md](modules/audio.md) | выпущен в v0.1.0 |
-| Локализация (каталог строк, подстановка в надписи) | [modules/localization.md](modules/localization.md) | выпущен в v0.1.0 |
+| Локализация (каталог строк, составной каталог, подстановка в надписи) | [modules/localization.md](modules/localization.md) | выпущен в v0.1.0, дополнен в v0.2.0 |
 | Web-качество | [modules/web-quality.md](modules/web-quality.md) | выпущен в v0.1.0 |
 | Фабрики и заглушки | [modules/factories.md](modules/factories.md) | выпущен в v0.1.0 |
 | Моки редактора | [modules/mocks.md](modules/mocks.md) | выпущен в v0.1.0 |
-| Яндекс-реализация и заплатки PluginYG2 | [modules/yandex.md](modules/yandex.md) | выпущен в v0.1.0, проверен на стенде на Яндексе |
+| Яндекс-реализация и заплатки PluginYG2 | [modules/yandex.md](modules/yandex.md) | выпущен в v0.1.0, проверен на стенде на Яндексе; оценка, ярлык и время добавлены в v0.2.0 (на стенде не проверены) |
 
 Файл модуля появляется вместе с переносом кода. Строка статуса обновляется в том же изменении.
 

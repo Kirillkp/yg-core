@@ -8,6 +8,23 @@
 
 Сюда агенты и разработчики добавляют строки по мере работы. Перед выпуском раздел превращается в запись версии.
 
+## [0.2.0] - 2026-10-12
+
+Платформенные возможности для шаблона игр (оценка игры, ярлык, серверное время), составной каталог строк и два исправления прогресса. Подробно: [versions/v0.2.0.md](Documentation~/versions/v0.2.0.md). Сборка стенда в Unity и прогон на Яндексе на момент записи не выполнены.
+
+### Добавлено
+- Контракты `IReviewService` (`CanReviewAsync`, `RequestReviewAsync`), `IShortcutService` (`CanShowPromptAsync`, `ShowPromptAsync`) и `IServerClock` (`GetUtcNowAsync`) в `YgCore.Contracts`. Документ: `modules/contracts.md`.
+- Реализация для Яндекс Игр: `PluginYG2ReviewService`, `PluginYG2ShortcutService`, `PluginYG2ServerClock`, мост `YgPlatformFeaturesBridge` и `YgCorePlatformFeatures.jslib` (прямые вызовы `ysdk.feedback`, `ysdk.shortcut`, `ysdk.serverTime`, модули PluginYG2 не нужны). Если у SDK нет серверного времени, сервис недоступен, а запасной вариант выбирает игра. Документ: `modules/yandex.md`.
+- Моки `EditorMockReviewService`, `EditorMockShortcutService`, `EditorMockServerClock`, заглушки `UnavailableReviewService`, `UnavailableShortcutService`, `UnavailableServerClock` и фабрики `ReviewServiceFactory`, `ShortcutServiceFactory`, `ServerClockFactory`.
+- `CompositeLocalizationCatalog` (несколько каталогов строк как один: порядок это приоритет, поиск по языку идёт через все каталоги до запасного языка) и необязательный интерфейс `ILocalizationCatalogLookup`, который реализует `DictionaryLocalizationCatalog`. Документ: `modules/localization.md`.
+- `SessionGameSettingsService.SanitizeVolume(volume, fallback)`.
+- Стенд: секции «Оценка и ярлык» и «Время», самопроверка «Составной каталог строк», проверка оценки и ярлыка в «Проверить сервисы».
+- Проверки без Unity: `Tools/CoreChecks` 278 проверок (было 224), `Tools/YandexChecks` 71 проверка (было 47).
+
+### Исправлено
+- Слияние гостя с облаком при входе теряло награды и покупки, полученные за время слияния: снимок гостя делался до загрузки облака, а запросы записи во время слияния отбрасывались. Теперь снимок делается после получения облака, запросы записи запоминаются, а при сбое облака запись повторяется (`ProgressionService`).
+- Громкость `NaN` проходила через `Mathf.Clamp01` в `SettingsProgressData.Normalized` и `SessionGameSettingsService` и попадала в сохранение и звук. Теперь `NaN` заменяется значением по умолчанию (а в `SetMusicVolume` и `SetSfxVolume` игнорируется).
+
 ## [0.1.1] - 2026-10-11
 
 Код пакета не менялся. В репозиторий добавлены оркестрация агентов и описание шаблонов, поэтому шаблоны игр начинаются с этой версии. Подробно: [versions/v0.1.1.md](Documentation~/versions/v0.1.1.md).
