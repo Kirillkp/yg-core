@@ -7,7 +7,7 @@
 | Версия пакета | Unity | PluginYG2 | Модули PluginYG2 | Схема сохранения | Статус |
 |---|---|---|---|---|---|
 | 0.0.0 | не определено | не определено | не определены | нет | скелет, кода нет |
-| 0.2.0 | 6000.6.0f1 (код собирается проверками без Unity; сборка стенда и прогон на Яндексе не выполнены) | v2.0092 (Storage v1.021, Payments v1.02); новые возможности вызывают SDK напрямую, модули Review и ServerTime плагина не нужны | Authorization, Storage, Leaderboards, InterstitialAdv, RewardedAdv, Payments, Localization | определяет игра (конверт v1 без изменений) | подготовлена, ждёт прогона стенда на Яндексе |
+| 0.2.0 | 6000.6.0f1 (собрано и проверено на Яндексе в составе шаблона `yg-template-roblox` 2026-10-13; сборка стенда `yg-core` не выполнялась) | v2.0092 (Storage v1.021, Payments v1.02); новые возможности вызывают SDK напрямую, модули Review и ServerTime плагина не нужны | Authorization, Storage, Leaderboards, InterstitialAdv, RewardedAdv, Payments, Localization | определяет игра (конверт v1 без изменений) | выпущена, тег `v0.2.0` |
 | 0.1.1 | 6000.6.0f1 (пакет собран и проверен на стенде на Яндексе, 2026-10-10) | v2.0092 (Storage v1.021, Payments v1.02) | Authorization, Storage, Leaderboards, InterstitialAdv, RewardedAdv, Payments, Localization | определяет игра (конверт v1: `format`, `schemaVersion`, `revision`) | выпущена, код как в 0.1.0 |
 | 0.1.0 | 6000.6.0f1 (пакет собран и проверен на стенде на Яндексе, 2026-10-10) | v2.0092 (Storage v1.021, Payments v1.02) | Authorization, Storage, Leaderboards, InterstitialAdv, RewardedAdv, Payments, Localization | определяет игра (конверт v1: `format`, `schemaVersion`, `revision`) | выпущена, проверена на стенде |
 
